@@ -19,6 +19,13 @@ let currentLang = 'es';
 let hpChartInstance = null;
 let balanceChartInstance = null;
 
+// Función de traducción auxiliar
+function getTranslation(key) {
+  return (translations[currentLang] && translations[currentLang][key]) 
+    ? translations[currentLang][key] 
+    : key;
+}
+
 // Función para consultar la blockchain con reconexión automática de nodos
 async function fetchHiveNodes(method, params = []) {
   for (let attempt = 0; attempt < HIVE_NODES.length; attempt++) {
@@ -85,7 +92,21 @@ const translations = {
     recentHistory: "Actividad Reciente",
     noHistory: "No hay movimientos recientes registrados.",
     hpDistribution: "Distribución de HP",
-    balanceBreakdown: "Desglose de Balances ($USD)"
+    balanceBreakdown: "Desglose de Balances ($USD)",
+    chartHpOwn: "Propio",
+    chartHpReceived: "Recibido",
+    chartHpDelegated: "Delegado Out",
+    opTransfer: "Transferencia de",
+    opTo: "a",
+    opVote: "Voto",
+    opPost: "en el post de",
+    opComment: "Comentario en respuesta a",
+    opNewPost: "Publicación de nuevo post",
+    opClaim: "Recompensas reclamadas",
+    opCustom: "Acción personalizada (Protocolo:",
+    opDelegate: "Delegación de HP a",
+    opGeneric: "Operación:",
+    voteEstimateSub: "Estimación con 100% de Mana y Peso"
   },
   en: {
     subtitle: "Real-time Hive blockchain statistics",
@@ -122,7 +143,21 @@ const translations = {
     recentHistory: "Recent Activity",
     noHistory: "No recent activity found.",
     hpDistribution: "HP Distribution",
-    balanceBreakdown: "Balance Breakdown ($USD)"
+    balanceBreakdown: "Balance Breakdown ($USD)",
+    chartHpOwn: "Own",
+    chartHpReceived: "Received",
+    chartHpDelegated: "Delegated Out",
+    opTransfer: "Transfer of",
+    opTo: "to",
+    opVote: "Vote",
+    opPost: "on post by",
+    opComment: "Comment reply to",
+    opNewPost: "New post published",
+    opClaim: "Claimed rewards",
+    opCustom: "Custom action (Protocol:",
+    opDelegate: "HP Delegation to",
+    opGeneric: "Operation:",
+    voteEstimateSub: "Estimation with 100% Mana and Weight"
   }
 };
 
@@ -165,43 +200,40 @@ function calculateReputation(rep) {
 function calculateVoteValue(userEffVests) {
   if (!globalRewardPool || !currentHivePrice || userEffVests <= 0) return 0;
 
-  // Extraer saldo de la piscina de recompensas de forma limpia
   const rawRewardBalance = globalRewardPool.reward_balance || globalRewardPool.balance || "0 HIVE";
   const rewardBalance = parseFloat(rawRewardBalance.split(' ')[0]);
   const recentClaims = parseFloat(globalRewardPool.recent_claims || 0);
 
   if (!rewardBalance || !recentClaims) return 0;
 
-  // 1 VEST = 1,000,000 VESTS unidades base de la blockchain
   const vestsInBase = userEffVests * 1e6;
-  
-  // Un voto al 100% de peso y 100% mana consume 1/50 parte (2000 / 10000 = 0.02)
   const power = (10000 * 10000 / 10000) / 50; 
   const rshares = (power * vestsInBase) / 10000;
 
-  // Valor en HIVE y conversión a USD
   const voteValueHive = (rshares / recentClaims) * rewardBalance;
   return voteValueHive * currentHivePrice;
 }
 
-// Formatear operaciones de la blockchain
+// Formatear operaciones de la blockchain con traducción dinámica
 function parseOperation(op) {
   const [type, data] = op;
+  const t = (key) => getTranslation(key);
+
   switch (type) {
     case 'transfer':
-      return `💸 Transferencia de <strong>${data.amount}</strong> a <strong>@${data.to}</strong> ${data.memo ? `<i>("${data.memo}")</i>` : ''}`;
+      return `💸 ${t('opTransfer')} <strong>${data.amount}</strong> ${t('opTo')} <strong>@${data.to}</strong> ${data.memo ? `<i>("${data.memo}")</i>` : ''}`;
     case 'vote':
-      return `👍 Voto (${data.weight / 100}%) en el post de <strong>@${data.author}</strong>`;
+      return `👍 ${t('opVote')} (${data.weight / 100}%) ${t('opPost')} <strong>@${data.author}</strong>`;
     case 'comment':
-      return data.parent_author ? `💬 Comentario en respuesta a <strong>@${data.parent_author}</strong>` : `📝 Publicación de nuevo post`;
+      return data.parent_author ? `💬 ${t('opComment')} <strong>@${data.parent_author}</strong>` : `📝 ${t('opNewPost')}`;
     case 'claim_reward_balance':
-      return `🎁 Recompensas reclamadas: ${data.reward_hbd} | ${data.reward_hive}`;
+      return `🎁 ${t('opClaim')}: ${data.reward_hbd} | ${data.reward_hive}`;
     case 'custom_json':
-      return `⚡ Acción personalizada (Protocolo: ${data.id})`;
+      return `⚡ ${t('opCustom')} ${data.id})`;
     case 'delegate_vesting_shares':
-      return `🔄 Delegación de HP a <strong>@${data.delegatee}</strong>`;
+      return `🔄 ${t('opDelegate')} <strong>@${data.delegatee}</strong>`;
     default:
-      return `⚙️ Operación: <code>${type}</code>`;
+      return `⚙️ ${t('opGeneric')} <code>${type}</code>`;
   }
 }
 
@@ -394,7 +426,7 @@ function renderUserUI(user, profileData, historyData = []) {
       <div class="card">
         <div class="label" data-i18n="voteValue">${t.voteValue}</div>
         <div class="value" style="color:var(--success);">$${voteValueUSD.toFixed(3)} USD</div>
-        <div class="subvalue">Estimación con 100% de Mana y Peso</div>
+        <div class="subvalue" data-i18n="voteEstimateSub">${t.voteEstimateSub}</div>
       </div>
     </div>
 
@@ -402,25 +434,25 @@ function renderUserUI(user, profileData, historyData = []) {
       <div class="card">
         <div class="label" data-i18n="effHP">${t.effHP}</div>
         <div class="value">${effHP.toLocaleString(undefined, {maximumFractionDigits: 2})} HP</div>
-        <div class="subvalue">${t.ownHP}: ${ownHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
+        <div class="subvalue"><span data-i18n="ownHP">${t.ownHP}</span>: ${ownHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="delegations">${t.delegations}</div>
         <div class="value" style="color:var(--accent);">+${recHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
-        <div class="subvalue" style="color:var(--primary);">${t.outgoing}: -${delHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
+        <div class="subvalue" style="color:var(--primary);"><span data-i18n="outgoing">${t.outgoing}</span>: -${delHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="balanceHive">${t.balanceHive}</div>
         <div class="value">${parseFloat(user.balance).toLocaleString()} HIVE</div>
-        <div class="subvalue">${t.savings}: ${parseFloat(user.savings_balance).toLocaleString()} HIVE</div>
+        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${parseFloat(user.savings_balance).toLocaleString()} HIVE</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="balanceHbd">${t.balanceHbd}</div>
         <div class="value">${parseFloat(user.hbd_balance).toLocaleString()} HBD</div>
-        <div class="subvalue">${t.savings}: ${parseFloat(user.savings_hbd_balance).toLocaleString()} HBD</div>
+        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${parseFloat(user.savings_hbd_balance).toLocaleString()} HBD</div>
       </div>
     </div>
 
@@ -455,11 +487,16 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
   if (hpChartInstance) hpChartInstance.destroy();
   if (balanceChartInstance) balanceChartInstance.destroy();
 
+  // Obtener traducciones para las etiquetas de los gráficos
+  const labelOwn = getTranslation('chartHpOwn');
+  const labelRec = getTranslation('chartHpReceived');
+  const labelDel = getTranslation('chartHpDelegated');
+
   const ctxHP = document.getElementById('hpChart').getContext('2d');
   hpChartInstance = new Chart(ctxHP, {
     type: 'doughnut',
     data: {
-      labels: ['Propio', 'Recibido', 'Delegado Out'],
+      labels: [labelOwn, labelRec, labelDel],
       datasets: [{
         data: [ownHP, recHP, delHP],
         backgroundColor: ['#e31337', '#00d1b2', '#ffdd57'],
@@ -515,6 +552,7 @@ function toggleLanguage() {
     if (t[key]) elem.innerText = t[key];
   });
 
+  // Re-renderizar los datos del usuario para actualizar tabla e historial traducidos
   const usernameInput = document.getElementById('username').value.trim();
   if (usernameInput) loadUserData();
 }
@@ -535,7 +573,6 @@ async function handleUserAutocomplete(event) {
     return;
   }
 
-  // Esperar 300ms tras la última tecla para no saturar peticiones
   clearTimeout(debounceTimer);
   debounceTimer = setTimeout(async () => {
     try {
@@ -550,13 +587,13 @@ async function handleUserAutocomplete(event) {
   }, 300);
 }
 
-// Vincular el evento de escucha al input de usuario
-const usernameInput = document.getElementById('username');
-if (usernameInput) {
-  usernameInput.addEventListener('input', handleUserAutocomplete);
-}
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
+  const usernameInput = document.getElementById('username');
+  if (usernameInput) {
+    usernameInput.addEventListener('input', handleUserAutocomplete);
+  }
+
   await loadGlobalStats();
   await loadUserData();
 
