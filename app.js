@@ -548,6 +548,7 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
 }
 
 // Conmutación de idioma optimizada
+// Conmutación de idioma optimizada
 function toggleLanguage() {
   // 1. Cambiar al nuevo idioma
   currentLang = currentLang === 'es' ? 'en' : 'es';
@@ -562,7 +563,7 @@ function toggleLanguage() {
   const t = translations[currentLang];
   if (!t) return;
 
-  // 4. Traducir textos respetando enlaces/HTML
+  // 4. Traducir elementos estáticos del HTML con data-i18n
   document.querySelectorAll('[data-i18n]').forEach(elem => {
     const key = elem.getAttribute('data-i18n');
     if (t[key] !== undefined) {
@@ -578,10 +579,10 @@ function toggleLanguage() {
     }
   });
 
-  // 6. Re-renderizar perfil si hay un usuario buscado
+  // 6. Recargar y volver a renderizar los datos del usuario (incluyendo las actividades traducidas)
   const usernameInput = document.getElementById('username');
-  if (usernameInput && usernameInput.value.trim() !== '' && typeof currentUserData !== 'undefined' && currentUserData) {
-    renderUserProfile(currentUserData);
+  if (usernameInput && usernameInput.value.trim() !== '') {
+    loadUserData();
   }
 }
 
