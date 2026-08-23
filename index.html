@@ -202,7 +202,7 @@
 
     <header>
       <div class="logo-container">
-        <!-- Tu SVG con tamaño ajustado a 28x28px -->
+        <!-- SVG ajustado a 28x28px -->
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 190" width="56" height="56">
           <defs><style>.cls-1{fill:#e31337;}</style></defs>
           <g id="Layer_2" data-name="Layer 2">
@@ -219,11 +219,12 @@
     </header>
 
     <!-- Buscador -->
-<div class="search-box">
-  <input type="text" id="username" placeholder="Nombre de usuario" list="user-suggestions" autocomplete="off">
-  <datalist id="user-suggestions"></datalist>
-  <button id="search-btn" data-i18n="searchBtn">Analizar</button>
-</div>
+    <div class="search-box">
+      <input type="text" id="username" placeholder="Nombre de usuario" list="user-suggestions" autocomplete="off">
+      <datalist id="user-suggestions"></datalist>
+      <button id="search-btn" data-i18n="searchBtn">Analizar</button>
+    </div>
+
     <!-- Sección Blockchain Global -->
     <h2 class="section-title" data-i18n="globalTitle">Red Global Hive</h2>
     <div class="grid" id="global-grid">
@@ -240,11 +241,12 @@
     </div>
 
     <!-- Sección Usuario -->
-    <h2 class="section-title" data-i18n="userTitle">Análisis de Cuenta</h2>
-    <div id="user-section">
-      <div class="loader" data-i18n="loading">Cargando datos...</div>
-    </div>
+<h2 class="section-title" data-i18n="userTitle">Análisis de Cuenta</h2>
+<div id="user-section">
+  <div class="card" style="text-align: center; color: var(--text-dim);" data-i18n="userPrompt">
+    Ingresa un usuario en el buscador para analizar su cuenta
   </div>
+</div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>

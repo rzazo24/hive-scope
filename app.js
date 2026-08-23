@@ -106,7 +106,9 @@ const translations = {
     opCustom: "Acción personalizada (Protocolo:",
     opDelegate: "Delegación de HP a",
     opGeneric: "Operación:",
-    voteEstimateSub: "Estimación con 100% de Mana y Peso"
+    voteEstimateSub: "Estimación con 100% de Mana y Peso",
+    userTitle: "Análisis de Cuenta",
+    userPrompt: "Ingresa un usuario en el buscador para analizar su cuenta"
   },
   en: {
     subtitle: "Real-time Hive blockchain statistics",
@@ -157,7 +159,9 @@ const translations = {
     opCustom: "Custom action (Protocol:",
     opDelegate: "HP Delegation to",
     opGeneric: "Operation:",
-    voteEstimateSub: "Estimation with 100% Mana and Weight"
+    voteEstimateSub: "Estimation with 100% Mana and Weight",
+    userTitle: "Account Analysis",
+    userPrompt: "Enter a username in the search bar to analyze their account"
   }
 };
 
@@ -541,20 +545,28 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
   });
 }
 
-// Conmutación de idioma
+// Conmutación de idioma optimizada
 function toggleLanguage() {
   currentLang = currentLang === 'es' ? 'en' : 'es';
-  document.getElementById('lang-label').innerText = currentLang.toUpperCase();
+  
+  const langLabel = document.getElementById('lang-label');
+  if (langLabel) langLabel.innerText = currentLang.toUpperCase();
 
   const t = translations[currentLang];
+
+  // Actualiza todos los elementos del DOM que tengan data-i18n
   document.querySelectorAll('[data-i18n]').forEach(elem => {
     const key = elem.getAttribute('data-i18n');
-    if (t[key]) elem.innerText = t[key];
+    if (t && t[key]) {
+      elem.innerText = t[key];
+    }
   });
 
-  // Re-renderizar los datos del usuario para actualizar tabla e historial traducidos
-  const usernameInput = document.getElementById('username').value.trim();
-  if (usernameInput) loadUserData();
+  // Si ya hay un usuario cargado, re-renderiza su perfil con el nuevo idioma
+  const usernameInput = document.getElementById('username');
+  if (usernameInput && usernameInput.value.trim() !== '') {
+    loadUserData();
+  }
 }
 
 // ==========================================
