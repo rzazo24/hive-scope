@@ -58,7 +58,7 @@ async function fetchHiveNodes(method, params = []) {
 // Diccionario de traducciones
 const translations = {
   es: {
-    subtitle: "Estadísticas en tiempo real de la blockchain de Hive",
+    subtitle: "Hive, en tiempo real",
     searchBtn: "Analizar",
     globalTitle: "Red Global Hive",
     userTitle: "Análisis de Cuenta",
@@ -108,10 +108,11 @@ const translations = {
     opGeneric: "Operación:",
     voteEstimateSub: "Estimación con 100% de Mana y Peso",
     userTitle: "Análisis de Cuenta",
-    userPrompt: "Ingresa un usuario en el buscador para analizar su cuenta"
+    userPrompt: "Ingresa un usuario en el buscador para analizar su cuenta",
+    footerText: 'Hecho con ❤️ por <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>'
   },
   en: {
-    subtitle: "Real-time Hive blockchain statistics",
+    subtitle: "Hive, in real-time",
     searchBtn: "Analyze",
     globalTitle: "Global Hive Network",
     userTitle: "Account Analysis",
@@ -161,7 +162,8 @@ const translations = {
     opGeneric: "Operation:",
     voteEstimateSub: "Estimation with 100% Mana and Weight",
     userTitle: "Account Analysis",
-    userPrompt: "Enter a username in the search bar to analyze their account"
+    userPrompt: "Enter a username in the search bar to analyze their account",
+    footerText: 'Made with ❤️ by <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>'
   }
 };
 
@@ -547,25 +549,39 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
 
 // Conmutación de idioma optimizada
 function toggleLanguage() {
+  // 1. Cambiar al nuevo idioma
   currentLang = currentLang === 'es' ? 'en' : 'es';
   
+  // 2. Actualizar la etiqueta del botón al idioma activo
   const langLabel = document.getElementById('lang-label');
-  if (langLabel) langLabel.innerText = currentLang.toUpperCase();
+  if (langLabel) {
+    langLabel.textContent = currentLang.toUpperCase();
+  }
 
+  // 3. Obtener traducciones
   const t = translations[currentLang];
+  if (!t) return;
 
-  // Actualiza todos los elementos del DOM que tengan data-i18n
+  // 4. Traducir textos respetando enlaces/HTML
   document.querySelectorAll('[data-i18n]').forEach(elem => {
     const key = elem.getAttribute('data-i18n');
-    if (t && t[key]) {
-      elem.innerText = t[key];
+    if (t[key] !== undefined) {
+      elem.innerHTML = t[key];
     }
   });
 
-  // Si ya hay un usuario cargado, re-renderiza su perfil con el nuevo idioma
+  // 5. Traducir placeholders de inputs
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(elem => {
+    const key = elem.getAttribute('data-i18n-placeholder');
+    if (t[key] !== undefined) {
+      elem.placeholder = t[key];
+    }
+  });
+
+  // 6. Re-renderizar perfil si hay un usuario buscado
   const usernameInput = document.getElementById('username');
-  if (usernameInput && usernameInput.value.trim() !== '') {
-    loadUserData();
+  if (usernameInput && usernameInput.value.trim() !== '' && typeof currentUserData !== 'undefined' && currentUserData) {
+    renderUserProfile(currentUserData);
   }
 }
 
