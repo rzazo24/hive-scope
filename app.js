@@ -321,7 +321,7 @@ async function loadUserData() {
 
     try {
       profileData = await fetchHiveNodes('bridge.get_profile', { account: usernameInput });
-      historyData = await fetchHiveNodes('condenser_api.get_account_history', [usernameInput, -1, 10]);
+      historyData = await fetchHiveNodes('condenser_api.get_account_history', [usernameInput, -1, 50]);
     } catch (e) {
       console.warn("No se pudieron obtener datos secundarios del usuario:", e);
     }
@@ -390,16 +390,28 @@ function renderUserUI(user, profileData, historyData = []) {
   const website = metadata.website ? `🔗 <a href="${metadata.website}" target="_blank" style="color:var(--accent); text-decoration:none;">${metadata.website}</a>` : '';
   const createdDate = new Date(user.created + 'Z').toLocaleDateString();
 
-  // Historial Reciente
+  // Historial Reciente con ID de transacción / número correlativo
   let historyHTML = '';
   if (historyData && historyData.length > 0) {
     historyHTML = historyData.slice().reverse().map(item => {
-      const op = item[1].op;
-      const timestamp = new Date(item[1].timestamp + 'Z').toLocaleString();
+      const index = item[0];       // Número de secuencia en la cuenta
+      const opData = item[1];      // Contenido del evento
+      const op = opData.op;
+      const trxId = opData.trx_id; // ID único de la transacción
+      const timestamp = new Date(opData.timestamp + 'Z').toLocaleString();
+
+      // Muestra hash enlazado a hive block explorer o el número de secuencia (#)
+      const shortTrx = (trxId && trxId !== '0000000000000000000000000000000000000000')
+  ? `<a href="https://hiveblockexplorer.com/tx/${trxId}" target="_blank" rel="noopener" class="trx-link">#${trxId.substring(0, 8)}</a>`
+  : `<span class="trx-num">#${index}</span>`;
+
       return `
         <div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9em;">
-          <div>${parseOperation(op)}</div>
-          <div style="color: var(--text-dim); font-size: 0.8em; margin-top: 2px;">${timestamp}</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px;">
+            <div>${parseOperation(op)}</div>
+            <div style="font-family: monospace; font-size: 0.8em; flex-shrink: 0;">${shortTrx}</div>
+          </div>
+          <div style="color: var(--text-dim); font-size: 0.8em;">${timestamp}</div>
         </div>
       `;
     }).join('');
