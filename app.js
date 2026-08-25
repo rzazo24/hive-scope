@@ -129,7 +129,9 @@ const translations = {
     resourceCredits: "Resource Credits (RC)",
     never: "Sin publicaciones",
     accountAge: "Antigüedad de la Cuenta",
-    daysAgo: "días"
+    daysAgo: "días",
+    lastComment: "Último Comentario",
+    noRecentComment: "Sin comentarios recientes"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -192,7 +194,9 @@ const translations = {
     resourceCredits: "Resource Credits (RC)",
     never: "No posts yet",
     accountAge: "Account Age",
-    daysAgo: "days"
+    daysAgo: "days",
+    lastComment: "Last Comment",
+    noRecentComment: "No recent comments"
   }
 };
 
@@ -439,6 +443,26 @@ async function loadUserData() {
   }
 }
 
+// Busca el comentario más reciente dentro del historial de actividad ya cargado
+function findLastComment(historyData) {
+  if (!historyData || historyData.length === 0) return null;
+
+  // El historial viene ordenado de más antiguo a más reciente, recorremos desde el final
+  for (let i = historyData.length - 1; i >= 0; i--) {
+    const opData = historyData[i][1];
+    const op = opData.op;
+    const [type, data] = op;
+
+    if (type === 'comment' && data.parent_author) {
+      return {
+        timestamp: opData.timestamp,
+        parentAuthor: data.parent_author
+      };
+    }
+  }
+  return null;
+}
+
 // Renderizar la interfaz
 function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
   const container = document.getElementById('user-section');
@@ -508,6 +532,9 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
   const pendingVests = parseFloat((user.reward_vesting_balance || "0 VESTS").split(' ')[0]);
   const pendingHP = vestsToHP(pendingVests);
   const hasPendingRewards = (pendingHive > 0 || pendingHbd > 0 || pendingHP > 0);
+
+  // Último comentario (buscado en el historial de actividad reciente)
+  const lastComment = findLastComment(historyData);
 
   // Publicaciones totales
   const postCount = user.post_count !== undefined ? parseInt(user.post_count) : 0;
@@ -637,6 +664,12 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
           ${hasPendingRewards ? `${formatNumber(pendingHP, {maximumFractionDigits: 3})} HP` : '--'}
         </div>
         ${hasPendingRewards ? `<div class="subvalue">${formatNumber(pendingHive, {maximumFractionDigits: 3})} HIVE • ${formatNumber(pendingHbd, {maximumFractionDigits: 3})} HBD</div>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="lastComment">${t.lastComment}</div>
+        <div class="value">${lastComment ? new Date(lastComment.timestamp + 'Z').toLocaleDateString() : escapeHtml(t.noRecentComment)}</div>
+        ${lastComment ? `<div class="subvalue">${t.opComment} <strong>@${escapeHtml(lastComment.parentAuthor)}</strong></div>` : ''}
       </div>
     </div>
 
