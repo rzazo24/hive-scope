@@ -131,7 +131,13 @@ const translations = {
     accountAge: "Antigüedad de la Cuenta",
     daysAgo: "días",
     lastComment: "Último Comentario",
-    noRecentComment: "Sin comentarios recientes"
+    noRecentComment: "Sin comentarios recientes",
+    powerDown: "Power Down",
+    powerDownActive: "Activo",
+    powerDownInactive: "Inactivo",
+    perWeek: "por semana",
+    nextPayout: "Próximo pago",
+    followers: "Seguidores / Siguiendo"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -196,7 +202,13 @@ const translations = {
     accountAge: "Account Age",
     daysAgo: "days",
     lastComment: "Last Comment",
-    noRecentComment: "No recent comments"
+    noRecentComment: "No recent comments",
+    powerDown: "Power Down",
+    powerDownActive: "Active",
+    powerDownInactive: "Inactive",
+    perWeek: "per week",
+    nextPayout: "Next payout",
+    followers: "Followers / Following"
   }
 };
 
@@ -418,6 +430,7 @@ async function loadUserData() {
     let profileData = null;
     let historyData = [];
     let rcAccount = null;
+    let followCounts = null;
 
     try {
       profileData = await fetchHiveNodes('bridge.get_profile', { account: usernameInput });
@@ -435,7 +448,13 @@ async function loadUserData() {
       console.warn("No se pudo obtener el RC del usuario:", e);
     }
 
-    renderUserUI(user, profileData, historyData, rcAccount);
+    try {
+      followCounts = await fetchHiveNodes('condenser_api.get_follow_count', [usernameInput]);
+    } catch (e) {
+      console.warn("No se pudo obtener el conteo de seguidores:", e);
+    }
+
+    renderUserUI(user, profileData, historyData, rcAccount, followCounts);
 
   } catch (error) {
     console.error('Error al cargar datos del usuario:', error);
@@ -464,7 +483,7 @@ function findLastComment(historyData) {
 }
 
 // Renderizar la interfaz
-function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
+function renderUserUI(user, profileData, historyData = [], rcAccount = null, followCounts = null) {
   const container = document.getElementById('user-section');
   const t = translations[currentLang];
 
@@ -535,6 +554,20 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
 
   // Último comentario (buscado en el historial de actividad reciente)
   const lastComment = findLastComment(historyData);
+
+  // Power Down: retiro semanal de HP programado
+  const withdrawRateVests = parseFloat((user.vesting_withdraw_rate || "0 VESTS").split(' ')[0]);
+  const isPoweringDown = withdrawRateVests > 0;
+  const powerDownWeeklyHP = isPoweringDown ? vestsToHP(withdrawRateVests) : 0;
+  const nextWithdrawalRaw = user.next_vesting_withdrawal;
+  let nextWithdrawalText = '';
+  if (isPoweringDown && nextWithdrawalRaw && !nextWithdrawalRaw.startsWith('1969-12-31')) {
+    nextWithdrawalText = new Date(nextWithdrawalRaw + 'Z').toLocaleDateString();
+  }
+
+  // Seguidores / Siguiendo
+  const followerCount = followCounts && followCounts.follower_count !== undefined ? followCounts.follower_count : null;
+  const followingCount = followCounts && followCounts.following_count !== undefined ? followCounts.following_count : null;
 
   // Publicaciones totales
   const postCount = user.post_count !== undefined ? parseInt(user.post_count) : 0;
@@ -670,6 +703,19 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
         <div class="label" data-i18n="lastComment">${t.lastComment}</div>
         <div class="value">${lastComment ? new Date(lastComment.timestamp + 'Z').toLocaleDateString() : escapeHtml(t.noRecentComment)}</div>
         ${lastComment ? `<div class="subvalue">${t.opComment} <strong>@${escapeHtml(lastComment.parentAuthor)}</strong></div>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="powerDown">${t.powerDown}</div>
+        <div class="value" style="color:${isPoweringDown ? 'var(--primary)' : 'var(--text-muted)'};">
+          ${isPoweringDown ? t.powerDownActive : t.powerDownInactive}
+        </div>
+        ${isPoweringDown ? `<div class="subvalue">-${formatNumber(powerDownWeeklyHP, {maximumFractionDigits: 3})} HP / ${t.perWeek}${nextWithdrawalText ? ` • ${t.nextPayout}: ${nextWithdrawalText}` : ''}</div>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="followers">${t.followers}</div>
+        <div class="value">${followerCount !== null ? formatNumber(followerCount) : '--'} / ${followingCount !== null ? formatNumber(followingCount) : '--'}</div>
       </div>
     </div>
 
