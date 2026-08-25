@@ -192,6 +192,14 @@ const translations = {
   }
 };
 
+// Formatea números forzando coma para miles y punto para decimales,
+// sin importar el idioma/región configurado en el navegador del usuario
+function formatNumber(num, options = {}) {
+  const n = parseFloat(num);
+  if (isNaN(n)) return '0';
+  return n.toLocaleString('en-US', options);
+}
+
 // Conversión segura de VESTS a HP
 function vestsToHP(vests) {
   const v = parseFloat(vests || 0);
@@ -340,7 +348,7 @@ async function loadGlobalStats() {
     const quote = parseFloat(priceData.quote || 1);
     currentHivePrice = base / quote;
 
-    document.getElementById('global-block').innerText = props.head_block_number ? props.head_block_number.toLocaleString() : '---';
+    document.getElementById('global-block').innerText = props.head_block_number ? formatNumber(props.head_block_number) : '---';
     document.getElementById('global-witness').innerText = props.current_witness ? `@${props.current_witness}` : '---';
     document.getElementById('global-hive-price').innerText = `$${currentHivePrice.toFixed(3)} USD`;
 
@@ -348,10 +356,10 @@ async function loadGlobalStats() {
     const currentSupply = parseFloat(props.current_supply || 0);
     const stakeRatio = currentSupply > 0 ? ((totalHiveStaked / currentSupply) * 100).toFixed(2) : '0.00';
 
-    document.getElementById('global-hive-staked').innerText = `${Math.round(totalHiveStaked).toLocaleString()} HP`;
+    document.getElementById('global-hive-staked').innerText = `${formatNumber(Math.round(totalHiveStaked))} HP`;
     document.getElementById('global-stake-ratio').innerText = `${stakeRatio}%`;
-    document.getElementById('global-hive-supply').innerText = `${Math.round(currentSupply).toLocaleString()} HIVE`;
-    document.getElementById('global-hbd-supply').innerText = `${Math.round(parseFloat(props.current_hbd_supply || 0)).toLocaleString()} HBD`;
+    document.getElementById('global-hive-supply').innerText = `${formatNumber(Math.round(currentSupply))} HIVE`;
+    document.getElementById('global-hbd-supply').innerText = `${formatNumber(Math.round(parseFloat(props.current_hbd_supply || 0)))} HBD`;
 
     const rawInterest = props.hbd_interest_rate !== undefined ? props.hbd_interest_rate : 0;
     const hbdInterestRate = (parseFloat(rawInterest) / 100).toFixed(1);
@@ -363,7 +371,7 @@ async function loadGlobalStats() {
       if (daoAccounts && daoAccounts.length > 0) {
         const rawHbd = daoAccounts[0].hbd_balance || "0 HBD";
         const daoHbd = parseFloat(rawHbd.split(' ')[0]);
-        if (!isNaN(daoHbd)) daoBalanceStr = `${Math.round(daoHbd).toLocaleString()} HBD`;
+        if (!isNaN(daoHbd)) daoBalanceStr = `${formatNumber(Math.round(daoHbd))} HBD`;
       }
     } catch (e) {
       console.warn("No se pudo obtener el saldo del fondo DAO:", e);
@@ -557,31 +565,31 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
     <div class="grid">
       <div class="card">
         <div class="label" data-i18n="effHP">${t.effHP}</div>
-        <div class="value">${effHP.toLocaleString(undefined, {maximumFractionDigits: 2})} HP</div>
-        <div class="subvalue"><span data-i18n="ownHP">${t.ownHP}</span>: ${ownHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
+        <div class="value">${formatNumber(effHP, {maximumFractionDigits: 2})} HP</div>
+        <div class="subvalue"><span data-i18n="ownHP">${t.ownHP}</span>: ${formatNumber(ownHP, {maximumFractionDigits: 0})} HP</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="delegations">${t.delegations}</div>
-        <div class="value" style="color:var(--accent);">+${recHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
-        <div class="subvalue" style="color:var(--primary);"><span data-i18n="outgoing">${t.outgoing}</span>: -${delHP.toLocaleString(undefined, {maximumFractionDigits: 0})} HP</div>
+        <div class="value" style="color:var(--accent);">+${formatNumber(recHP, {maximumFractionDigits: 0})} HP</div>
+        <div class="subvalue" style="color:var(--primary);"><span data-i18n="outgoing">${t.outgoing}</span>: -${formatNumber(delHP, {maximumFractionDigits: 0})} HP</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="balanceHive">${t.balanceHive}</div>
-        <div class="value">${parseFloat(user.balance).toLocaleString()} HIVE</div>
-        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${parseFloat(user.savings_balance).toLocaleString()} HIVE</div>
+        <div class="value">${formatNumber(user.balance)} HIVE</div>
+        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${formatNumber(user.savings_balance)} HIVE</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="balanceHbd">${t.balanceHbd}</div>
-        <div class="value">${parseFloat(user.hbd_balance).toLocaleString()} HBD</div>
-        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${parseFloat(user.savings_hbd_balance).toLocaleString()} HBD</div>
+        <div class="value">${formatNumber(user.hbd_balance)} HBD</div>
+        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${formatNumber(user.savings_hbd_balance)} HBD</div>
       </div>
 
       <div class="card">
         <div class="label" data-i18n="postCount">${t.postCount}</div>
-        <div class="value">${postCount.toLocaleString()}</div>
+        <div class="value">${formatNumber(postCount)}</div>
       </div>
 
       <div class="card">
