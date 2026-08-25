@@ -26,6 +26,17 @@ function getTranslation(key) {
     : key;
 }
 
+// Escapa texto para insertarlo de forma segura en innerHTML (evita XSS)
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Función para consultar la blockchain con reconexión automática de nodos
 async function fetchHiveNodes(method, params = []) {
   for (let attempt = 0; attempt < HIVE_NODES.length; attempt++) {
@@ -107,13 +118,16 @@ const translations = {
     opDelegate: "Delegación de HP a",
     opGeneric: "Operación:",
     voteEstimateSub: "Estimación con 100% de Mana y Peso",
-    userTitle: "Análisis de Cuenta",
     userPrompt: "Ingresa un usuario en el buscador para analizar su cuenta",
     footerText: 'Hecho con ❤️ por <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>',
     opCurationReward: "Recompensa de curación",
     opForPost: "en post de",
     opEffectiveVote: "Voto procesado en post de",
-    opAuthorReward: "Recompensa de autor"
+    opAuthorReward: "Recompensa de autor",
+    postCount: "Publicaciones Totales",
+    lastPost: "Última Publicación",
+    resourceCredits: "Resource Credits (RC)",
+    never: "Sin publicaciones"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -165,13 +179,16 @@ const translations = {
     opDelegate: "HP Delegation to",
     opGeneric: "Operation:",
     voteEstimateSub: "Estimation with 100% Mana and Weight",
-    userTitle: "Account Analysis",
     userPrompt: "Enter a username in the search bar to analyze their account",
     footerText: 'Made with ❤️ by <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>',
     opCurationReward: "Curation reward",
     opForPost: "on post by",
     opEffectiveVote: "Effective vote on post by",
-    opAuthorReward: "Author reward"
+    opAuthorReward: "Author reward",
+    postCount: "Total Posts",
+    lastPost: "Last Post",
+    resourceCredits: "Resource Credits (RC)",
+    never: "No posts yet"
   }
 };
 
@@ -210,6 +227,24 @@ function calculateReputation(rep) {
   return Math.floor(out);
 }
 
+// Calcular el porcentaje de Resource Credits (RC) regenerados hasta ahora
+function calculateRCPercent(rcAccount) {
+  if (!rcAccount || !rcAccount.rc_manabar || !rcAccount.max_rc) return null;
+
+  const maxRC = parseFloat(rcAccount.max_rc || 0);
+  if (maxRC <= 0) return null;
+
+  const currentMana = parseFloat(rcAccount.rc_manabar.current_mana || 0);
+  const lastUpdateTime = parseInt(rcAccount.rc_manabar.last_update_time || 0);
+  const now = Math.floor(Date.now() / 1000);
+  const elapsed = Math.max(0, now - lastUpdateTime);
+
+  let regenerated = currentMana + (elapsed * maxRC) / 432000; // Regeneración total en ~5 días
+  if (regenerated > maxRC) regenerated = maxRC;
+
+  return ((regenerated / maxRC) * 100).toFixed(2);
+}
+
 // Calcular valor estimado de un voto al 100% en USD
 function calculateVoteValue(userEffVests) {
   if (!globalRewardPool || !currentHivePrice || userEffVests <= 0) return 0;
@@ -235,16 +270,16 @@ function parseOperation(op) {
 
   switch (type) {
     case 'transfer':
-      return `💸 ${t('opTransfer')} <strong>${data.amount}</strong> ${t('opTo')} <strong>@${data.to}</strong> ${data.memo ? `<i>("${data.memo}")</i>` : ''}`;
+      return `💸 ${t('opTransfer')} <strong>${escapeHtml(data.amount)}</strong> ${t('opTo')} <strong>@${escapeHtml(data.to)}</strong> ${data.memo ? `<i>("${escapeHtml(data.memo)}")</i>` : ''}`;
     
     case 'vote':
-      return `👍 ${t('opVote')} (${data.weight / 100}%) ${t('opPost')} <strong>@${data.author}</strong>`;
+      return `👍 ${t('opVote')} (${data.weight / 100}%) ${t('opPost')} <strong>@${escapeHtml(data.author)}</strong>`;
     
     case 'effective_comment_vote':
-      return `⚡ ${t('opEffectiveVote') || 'Voto procesado en post de'} <strong>@${data.author}</strong>`;
+      return `⚡ ${t('opEffectiveVote') || 'Voto procesado en post de'} <strong>@${escapeHtml(data.author)}</strong>`;
 
     case 'comment':
-      return data.parent_author ? `💬 ${t('opComment')} <strong>@${data.parent_author}</strong>` : `📝 ${t('opNewPost')}`;
+      return data.parent_author ? `💬 ${t('opComment')} <strong>@${escapeHtml(data.parent_author)}</strong>` : `📝 ${t('opNewPost')}`;
     
     case 'claim_reward_balance': {
       const hive = parseFloat(data.reward_hive) || 0;
@@ -265,7 +300,7 @@ function parseOperation(op) {
         : (vests * (window.globalVestingFund / window.globalVestingShares) || (vests * 0.000577));
 
       const authorName = data.author || 'autor';
-      return `🏆 ${t('opCurationReward')}: <strong>${hp.toFixed(3)} HP</strong> ${t('opForPost')} <strong>@${authorName}</strong>`;
+      return `🏆 ${t('opCurationReward')}: <strong>${hp.toFixed(3)} HP</strong> ${t('opForPost')} <strong>@${escapeHtml(authorName)}</strong>`;
     }
 
     case 'author_reward': {
@@ -281,13 +316,13 @@ function parseOperation(op) {
     }
 
     case 'custom_json':
-      return `⚡ ${t('opCustom')} (${data.id})`;
+      return `⚡ ${t('opCustom')} (${escapeHtml(data.id)})`;
 
     case 'delegate_vesting_shares':
-      return `🔄 ${t('opDelegate')} <strong>@${data.delegatee}</strong>`;
+      return `🔄 ${t('opDelegate')} <strong>@${escapeHtml(data.delegatee)}</strong>`;
 
     default:
-      return `⚙️ ${t('opGeneric')} <code>${type}</code>`;
+      return `⚙️ ${t('opGeneric')} <code>${escapeHtml(type)}</code>`;
   }
 }
 
@@ -366,6 +401,7 @@ async function loadUserData() {
     const user = accounts[0];
     let profileData = null;
     let historyData = [];
+    let rcAccount = null;
 
     try {
       profileData = await fetchHiveNodes('bridge.get_profile', { account: usernameInput });
@@ -374,7 +410,16 @@ async function loadUserData() {
       console.warn("No se pudieron obtener datos secundarios del usuario:", e);
     }
 
-    renderUserUI(user, profileData, historyData);
+    try {
+      const rcResult = await fetchHiveNodes('rc_api.find_rc_accounts', { accounts: [usernameInput] });
+      if (rcResult && rcResult.rc_accounts && rcResult.rc_accounts.length > 0) {
+        rcAccount = rcResult.rc_accounts[0];
+      }
+    } catch (e) {
+      console.warn("No se pudo obtener el RC del usuario:", e);
+    }
+
+    renderUserUI(user, profileData, historyData, rcAccount);
 
   } catch (error) {
     console.error('Error al cargar datos del usuario:', error);
@@ -383,7 +428,7 @@ async function loadUserData() {
 }
 
 // Renderizar la interfaz
-function renderUserUI(user, profileData, historyData = []) {
+function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
   const container = document.getElementById('user-section');
   const t = translations[currentLang];
 
@@ -434,9 +479,22 @@ function renderUserUI(user, profileData, historyData = []) {
   const avatarUrl = metadata.profile_image || `https://images.hive.blog/u/${user.name}/avatar`;
   const name = metadata.name || user.name;
   const about = metadata.about || t.noBio;
-  const location = metadata.location ? `📍 ${metadata.location}` : '';
-  const website = metadata.website ? `🔗 <a href="${metadata.website}" target="_blank" style="color:var(--accent); text-decoration:none;">${metadata.website}</a>` : '';
+  const location = metadata.location ? `📍 ${escapeHtml(metadata.location)}` : '';
+  const website = metadata.website ? `🔗 <a href="${escapeHtml(metadata.website)}" target="_blank" style="color:var(--accent); text-decoration:none;">${escapeHtml(metadata.website)}</a>` : '';
   const createdDate = new Date(user.created + 'Z').toLocaleDateString();
+
+  // Publicaciones totales
+  const postCount = user.post_count !== undefined ? parseInt(user.post_count) : 0;
+
+  // Fecha de última publicación
+  const rawLastPost = user.last_root_post || user.last_post;
+  let lastPostText = t.never;
+  if (rawLastPost && !rawLastPost.startsWith('1970-01-01')) {
+    lastPostText = new Date(rawLastPost + 'Z').toLocaleDateString();
+  }
+
+  // Resource Credits (RC)
+  const rcPercent = calculateRCPercent(rcAccount);
 
   // Historial Reciente con ID de transacción / número correlativo
   let historyHTML = '';
@@ -469,11 +527,11 @@ function renderUserUI(user, profileData, historyData = []) {
 
   container.innerHTML = `
     <div class="profile-card">
-      <img src="${avatarUrl}" class="profile-avatar" alt="${user.name}" onerror="this.src='https://images.hive.blog/u/${user.name}/avatar'">
+      <img src="${escapeHtml(avatarUrl)}" class="profile-avatar" alt="${escapeHtml(user.name)}" onerror="this.src='https://images.hive.blog/u/${escapeHtml(user.name)}/avatar'">
       <div class="profile-info">
-        <h2>${name} <span class="rep-badge">REP ${reputation}</span></h2>
-        <p>@${user.name} • ${t.createdOn} ${createdDate} ${location ? '• ' + location : ''}</p>
-        <p style="margin-top: 6px; color: var(--text);">${about}</p>
+        <h2>${escapeHtml(name)} <span class="rep-badge">REP ${reputation}</span></h2>
+        <p>@${escapeHtml(user.name)} • ${t.createdOn} ${createdDate} ${location ? '• ' + location : ''}</p>
+        <p style="margin-top: 6px; color: var(--text);">${escapeHtml(about)}</p>
         ${website ? `<p style="margin-top: 4px;">${website}</p>` : ''}
       </div>
     </div>
@@ -519,6 +577,22 @@ function renderUserUI(user, profileData, historyData = []) {
         <div class="label" data-i18n="balanceHbd">${t.balanceHbd}</div>
         <div class="value">${parseFloat(user.hbd_balance).toLocaleString()} HBD</div>
         <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${parseFloat(user.savings_hbd_balance).toLocaleString()} HBD</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="postCount">${t.postCount}</div>
+        <div class="value">${postCount.toLocaleString()}</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="lastPost">${t.lastPost}</div>
+        <div class="value">${escapeHtml(lastPostText)}</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="resourceCredits">${t.resourceCredits}</div>
+        <div class="value" style="color:${rcPercent !== null ? 'var(--success)' : 'var(--text-muted)'};">${rcPercent !== null ? rcPercent + '%' : '--'}</div>
+        ${rcPercent !== null ? `<div class="progress-bar-container" style="margin-top:10px;"><div class="progress-bar" style="width: ${Math.min(100, Math.max(0, parseFloat(rcPercent)))}%;"></div></div>` : ''}
       </div>
     </div>
 
@@ -608,15 +682,19 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
 }
 
 // Conmutación de idioma optimizada
-// Conmutación de idioma optimizada
 function toggleLanguage() {
   // 1. Cambiar al nuevo idioma
   currentLang = currentLang === 'es' ? 'en' : 'es';
   
-  // 2. Actualizar la etiqueta del botón al idioma activo
+  // 2. Actualizar la etiqueta y la bandera del botón al idioma activo
   const langLabel = document.getElementById('lang-label');
   if (langLabel) {
     langLabel.textContent = currentLang.toUpperCase();
+  }
+
+  const langFlag = document.getElementById('lang-flag');
+  if (langFlag) {
+    langFlag.textContent = currentLang === 'es' ? '🇪🇸' : '🇬🇧';
   }
 
   // 3. Obtener traducciones
@@ -668,7 +746,7 @@ async function handleUserAutocomplete(event) {
       const suggestions = await fetchHiveNodes('condenser_api.lookup_accounts', [query, 5]);
 
       datalist.innerHTML = suggestions
-        .map(username => `<option value="${username}">`)
+        .map(username => `<option value="${escapeHtml(username)}">`)
         .join('');
     } catch (error) {
       console.warn('Error obteniendo sugerencias:', error.message);
@@ -690,5 +768,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('username').addEventListener('keypress', (e) => {
     if (e.key === 'Enter') loadUserData();
   });
-  document.getElementById('lang-toggle').addEventListener('click', toggleLanguage);
+  document.getElementById('lang-btn').addEventListener('click', toggleLanguage);
 });

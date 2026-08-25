@@ -216,33 +216,34 @@
     .site-footer:hover .heart {
       transform: scale(1.25);
     }
-   .subtitle-neon {
-    font-size: 1.35rem; /* Tamaño más grande (ajusta a 1.5rem si lo quieres aún mayor) */
-    font-weight: 700;    /* Un poco más grueso para potenciar el efecto */
-    color: #38bdf8;      /* Color base azul cian brillante */
-    text-shadow: 0 0 10px rgba(56, 189, 248, 0.6), 
-               0 0 20px rgba(56, 189, 248, 0.3); /* Doble halo de resplandor neón */
-    letter-spacing: 0.5px;
+    .subtitle-neon {
+      font-size: 1.35rem; /* Tamaño más grande (ajusta a 1.5rem si lo quieres aún mayor) */
+      font-weight: 700;    /* Un poco más grueso para potenciar el efecto */
+      color: #38bdf8;      /* Color base azul cian brillante */
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.6), 
+                 0 0 20px rgba(56, 189, 248, 0.3); /* Doble halo de resplandor neón */
+      letter-spacing: 0.5px;
+    }
+
     .trx-link {
-  color: #38bdf8;
-  text-decoration: none;
-  font-family: monospace;
-  background: rgba(56, 189, 248, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  transition: all 0.2s ease;
-}
+      color: #38bdf8;
+      text-decoration: none;
+      font-family: monospace;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
 
-.trx-link:hover {
-  background: rgba(56, 189, 248, 0.25);
-  text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
-}
+    .trx-link:hover {
+      background: rgba(56, 189, 248, 0.25);
+      text-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+    }
 
-.trx-num {
-  color: var(--text-dim, #94a3b8);
-  font-family: monospace;
-}
-}
+    .trx-num {
+      color: var(--text-dim, #94a3b8);
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
@@ -250,8 +251,8 @@
   <div class="container">
     <!-- Switcher de Idioma -->
     <div class="top-bar">
-  <button id="lang-btn" class="lang-btn" onclick="toggleLanguage()">
-    🌐 <span id="lang-label">ES</span>
+  <button id="lang-btn" class="lang-btn">
+    <span id="lang-flag">🇪🇸</span> <span id="lang-label">ES</span>
   </button>
 </div>
     <header>
