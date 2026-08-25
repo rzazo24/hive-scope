@@ -127,7 +127,9 @@ const translations = {
     postCount: "Publicaciones Totales",
     lastPost: "Última Publicación",
     resourceCredits: "Resource Credits (RC)",
-    never: "Sin publicaciones"
+    never: "Sin publicaciones",
+    accountAge: "Antigüedad de la Cuenta",
+    daysAgo: "días"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -188,7 +190,9 @@ const translations = {
     postCount: "Total Posts",
     lastPost: "Last Post",
     resourceCredits: "Resource Credits (RC)",
-    never: "No posts yet"
+    never: "No posts yet",
+    accountAge: "Account Age",
+    daysAgo: "days"
   }
 };
 
@@ -491,6 +495,20 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
   const website = metadata.website ? `🔗 <a href="${escapeHtml(metadata.website)}" target="_blank" style="color:var(--accent); text-decoration:none;">${escapeHtml(metadata.website)}</a>` : '';
   const createdDate = new Date(user.created + 'Z').toLocaleDateString();
 
+  // Antigüedad de la cuenta en días
+  const createdTimestamp = new Date(user.created + 'Z').getTime();
+  const accountAgeDays = Math.floor((Date.now() - createdTimestamp) / (1000 * 60 * 60 * 24));
+
+  // Witnesses apoyados (votados)
+  const witnessesVotedCount = user.witnesses_voted_for !== undefined ? parseInt(user.witnesses_voted_for) : 0;
+
+  // Recompensas pendientes (HIVE + HBD + HP sin reclamar)
+  const pendingHive = parseFloat((user.reward_hive_balance || "0 HIVE").split(' ')[0]);
+  const pendingHbd = parseFloat((user.reward_hbd_balance || "0 HBD").split(' ')[0]);
+  const pendingVests = parseFloat((user.reward_vesting_balance || "0 VESTS").split(' ')[0]);
+  const pendingHP = vestsToHP(pendingVests);
+  const hasPendingRewards = (pendingHive > 0 || pendingHbd > 0 || pendingHP > 0);
+
   // Publicaciones totales
   const postCount = user.post_count !== undefined ? parseInt(user.post_count) : 0;
 
@@ -601,6 +619,24 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null) {
         <div class="label" data-i18n="resourceCredits">${t.resourceCredits}</div>
         <div class="value" style="color:${rcPercent !== null ? 'var(--success)' : 'var(--text-muted)'};">${rcPercent !== null ? rcPercent + '%' : '--'}</div>
         ${rcPercent !== null ? `<div class="progress-bar-container" style="margin-top:10px;"><div class="progress-bar" style="width: ${Math.min(100, Math.max(0, parseFloat(rcPercent)))}%;"></div></div>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="accountAge">${t.accountAge}</div>
+        <div class="value">${formatNumber(accountAgeDays)} <span style="font-size:0.9rem; color:var(--text-muted);" data-i18n="daysAgo">${t.daysAgo}</span></div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="witnessesVoted">${t.witnessesVoted}</div>
+        <div class="value">${witnessesVotedCount} / 30</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="pendingRewards">${t.pendingRewards}</div>
+        <div class="value" style="color:${hasPendingRewards ? 'var(--success)' : 'var(--text-muted)'};">
+          ${hasPendingRewards ? `${formatNumber(pendingHP, {maximumFractionDigits: 3})} HP` : '--'}
+        </div>
+        ${hasPendingRewards ? `<div class="subvalue">${formatNumber(pendingHive, {maximumFractionDigits: 3})} HIVE • ${formatNumber(pendingHbd, {maximumFractionDigits: 3})} HBD</div>` : ''}
       </div>
     </div>
 
