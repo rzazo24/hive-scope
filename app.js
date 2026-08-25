@@ -109,7 +109,11 @@ const translations = {
     voteEstimateSub: "Estimación con 100% de Mana y Peso",
     userTitle: "Análisis de Cuenta",
     userPrompt: "Ingresa un usuario en el buscador para analizar su cuenta",
-    footerText: 'Hecho con ❤️ por <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>'
+    footerText: 'Hecho con ❤️ por <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>',
+    opCurationReward: "Recompensa de curación",
+    opForPost: "en post de",
+    opEffectiveVote: "Voto procesado en post de",
+    opAuthorReward: "Recompensa de autor"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -163,7 +167,11 @@ const translations = {
     voteEstimateSub: "Estimation with 100% Mana and Weight",
     userTitle: "Account Analysis",
     userPrompt: "Enter a username in the search bar to analyze their account",
-    footerText: 'Made with ❤️ by <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>'
+    footerText: 'Made with ❤️ by <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>',
+    opCurationReward: "Curation reward",
+    opForPost: "on post by",
+    opEffectiveVote: "Effective vote on post by",
+    opAuthorReward: "Author reward"
   }
 };
 
@@ -228,10 +236,16 @@ function parseOperation(op) {
   switch (type) {
     case 'transfer':
       return `💸 ${t('opTransfer')} <strong>${data.amount}</strong> ${t('opTo')} <strong>@${data.to}</strong> ${data.memo ? `<i>("${data.memo}")</i>` : ''}`;
+    
     case 'vote':
       return `👍 ${t('opVote')} (${data.weight / 100}%) ${t('opPost')} <strong>@${data.author}</strong>`;
+    
+    case 'effective_comment_vote':
+      return `⚡ ${t('opEffectiveVote') || 'Voto procesado en post de'} <strong>@${data.author}</strong>`;
+
     case 'comment':
       return data.parent_author ? `💬 ${t('opComment')} <strong>@${data.parent_author}</strong>` : `📝 ${t('opNewPost')}`;
+    
     case 'claim_reward_balance': {
       const hive = parseFloat(data.reward_hive) || 0;
       const hbd = parseFloat(data.reward_hbd) || 0;
@@ -243,10 +257,35 @@ function parseOperation(op) {
 
       return `🎁 ${t('opClaim')}: <strong>${hive.toFixed(3)} HIVE</strong>, <strong>${hp.toFixed(3)} HP</strong>, <strong>${hbd.toFixed(3)} HBD</strong>`;
     }
+
+    case 'curation_reward': {
+      const vests = parseFloat(data.reward) || 0;
+      const hp = (typeof vestsToHP === 'function')
+        ? vestsToHP(vests)
+        : (vests * (window.globalVestingFund / window.globalVestingShares) || (vests * 0.000577));
+
+      const authorName = data.author || 'autor';
+      return `🏆 ${t('opCurationReward')}: <strong>${hp.toFixed(3)} HP</strong> ${t('opForPost')} <strong>@${authorName}</strong>`;
+    }
+
+    case 'author_reward': {
+      const hbd = parseFloat(data.hbd_payout) || 0;
+      const hive = parseFloat(data.hive_payout) || 0;
+      const vests = parseFloat(data.vesting_payout) || 0;
+
+      const hp = (typeof vestsToHP === 'function')
+        ? vestsToHP(vests)
+        : (vests * (window.globalVestingFund / window.globalVestingShares) || (vests * 0.000577));
+
+      return `✍️ ${t('opAuthorReward') || 'Recompensa de autor'}: <strong>${hp.toFixed(3)} HP</strong>, <strong>${hbd.toFixed(3)} HBD</strong>, <strong>${hive.toFixed(3)} HIVE</strong>`;
+    }
+
     case 'custom_json':
       return `⚡ ${t('opCustom')} (${data.id})`;
+
     case 'delegate_vesting_shares':
       return `🔄 ${t('opDelegate')} <strong>@${data.delegatee}</strong>`;
+
     default:
       return `⚙️ ${t('opGeneric')} <code>${type}</code>`;
   }
