@@ -13,6 +13,7 @@ let globalVestingShares = 0;
 let globalVestingFundHive = 0;
 let globalRewardPool = null;
 let currentHivePrice = 0;
+let currentHbdInterestRate = 0;
 let currentLang = 'es';
 
 // Instancias de gráficos para destruirlos antes de re-renderizar
@@ -137,7 +138,11 @@ const translations = {
     powerDownInactive: "Inactivo",
     perWeek: "por semana",
     nextPayout: "Próximo pago",
-    followers: "Seguidores / Siguiendo"
+    followers: "Seguidores / Siguiendo",
+    portfolioValue: "Valor Total del Portfolio",
+    lastVote: "Último Voto Emitido",
+    hbdInterestEstimate: "Interés Anual Estimado (HBD Savings)",
+    neverVoted: "Sin votos registrados"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -208,7 +213,11 @@ const translations = {
     powerDownInactive: "Inactive",
     perWeek: "per week",
     nextPayout: "Next payout",
-    followers: "Followers / Following"
+    followers: "Followers / Following",
+    portfolioValue: "Total Portfolio Value",
+    lastVote: "Last Vote Cast",
+    hbdInterestEstimate: "Estimated Annual Interest (HBD Savings)",
+    neverVoted: "No votes recorded"
   }
 };
 
@@ -383,6 +392,7 @@ async function loadGlobalStats() {
 
     const rawInterest = props.hbd_interest_rate !== undefined ? props.hbd_interest_rate : 0;
     const hbdInterestRate = (parseFloat(rawInterest) / 100).toFixed(1);
+    currentHbdInterestRate = isNaN(hbdInterestRate) ? 0 : parseFloat(hbdInterestRate);
     document.getElementById('global-hbd-interest').innerText = isNaN(hbdInterestRate) ? '0.0%' : `${hbdInterestRate}%`;
 
     let daoBalanceStr = "0 HBD";
@@ -569,6 +579,25 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
   const followerCount = followCounts && followCounts.follower_count !== undefined ? followCounts.follower_count : null;
   const followingCount = followCounts && followCounts.following_count !== undefined ? followCounts.following_count : null;
 
+  // Valor total del portfolio en USD (HIVE + HP + HBD)
+  const hiveBalanceNum = parseFloat(user.balance || 0);
+  const hbdBalanceNum = parseFloat(user.hbd_balance || 0);
+  const savingsHiveNum = parseFloat(user.savings_balance || 0);
+  const savingsHbdNum = parseFloat(user.savings_hbd_balance || 0);
+  const portfolioUSD = ((hiveBalanceNum + savingsHiveNum) * currentHivePrice)
+    + (effHP * currentHivePrice)
+    + (hbdBalanceNum + savingsHbdNum);
+
+  // Último voto emitido
+  const rawLastVote = user.last_vote_time;
+  let lastVoteText = t.neverVoted;
+  if (rawLastVote && !rawLastVote.startsWith('1970-01-01')) {
+    lastVoteText = new Date(rawLastVote + 'Z').toLocaleDateString();
+  }
+
+  // Interés anual estimado sobre HBD en ahorros
+  const hbdInterestAnnualEstimate = savingsHbdNum * (currentHbdInterestRate / 100);
+
   // Publicaciones totales
   const postCount = user.post_count !== undefined ? parseInt(user.post_count) : 0;
 
@@ -716,6 +745,22 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
       <div class="card">
         <div class="label" data-i18n="followers">${t.followers}</div>
         <div class="value">${followerCount !== null ? formatNumber(followerCount) : '--'} / ${followingCount !== null ? formatNumber(followingCount) : '--'}</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="portfolioValue">${t.portfolioValue}</div>
+        <div class="value" style="color:var(--success);">$${formatNumber(portfolioUSD, {maximumFractionDigits: 2})} USD</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="lastVote">${t.lastVote}</div>
+        <div class="value">${escapeHtml(lastVoteText)}</div>
+      </div>
+
+      <div class="card">
+        <div class="label" data-i18n="hbdInterestEstimate">${t.hbdInterestEstimate}</div>
+        <div class="value" style="color:var(--success);">+${formatNumber(hbdInterestAnnualEstimate, {maximumFractionDigits: 3})} HBD</div>
+        <div class="subvalue">${currentHbdInterestRate}% APR</div>
       </div>
     </div>
 
