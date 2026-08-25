@@ -257,17 +257,37 @@
 </div>
     <header>
       <div class="logo-container">
-        <!-- SVG ajustado a 36x36px -->
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 190" width="36" height="36">
-          <defs><style>.cls-1{fill:#e31337;}</style></defs>
-          <g id="Layer_2" data-name="Layer 2">
-            <g id="Layer_1-2" data-name="Layer 1">
-              <path class="cls-1" d="M157.27,107.26a1,1,0,0,1,.82,1.42l-46.75,80.85a1,1,0,0,1-.82.47H81.94a.94.94,0,0,1-.81-1.42l46.75-80.85a.94.94,0,0,1,.81-.47ZM129.48,84.09a1,1,0,0,1-.82-.47L81.13,1.42A.94.94,0,0,1,81.94,0h28.58a1,1,0,0,1,.82.47l47.53,82.2a.94.94,0,0,1-.81,1.42Z"/>
-              <path class="cls-1" d="M135.13,1.42A.94.94,0,0,1,136,0h28.62a.93.93,0,0,1,.81.47l54.49,94.06a.93.93,0,0,1,0,.94l-54.49,94.06a.93.93,0,0,1-.81.47H136a.94.94,0,0,1-.82-1.42L189.34,95Zm-23.26,93.1a1,1,0,0,1,0,1L57.13,189.53a1,1,0,0,1-1.65,0L.13,95.48a1,1,0,0,1,0-1L54.87.47a1,1,0,0,1,1.65,0Z"/>
-            </g>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 460 100" width="215" height="46">
+          <defs>
+            <style>
+              .mark { fill: #e31337; }
+              .txt-hive { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-weight: 800; fill: #e31337; }
+              .txt-scope { font-family: 'Inter', system-ui, -apple-system, sans-serif; font-weight: 800; fill: #38bdf8; }
+              .glass-ring { fill: none; stroke: #38bdf8; stroke-width: 7; }
+              .glass-handle { stroke: #38bdf8; stroke-width: 7; stroke-linecap: round; }
+              .glass-bg { fill: #090d16; opacity: 0.55; }
+            </style>
+          </defs>
+
+          <!-- Símbolo Hive (triángulo diamante) -->
+          <g transform="translate(0, 5) scale(0.42)">
+            <path class="mark" d="M157.27,107.26a1,1,0,0,1,.82,1.42l-46.75,80.85a1,1,0,0,1-.82.47H81.94a.94.94,0,0,1-.81-1.42l46.75-80.85a.94.94,0,0,1,.81-.47ZM129.48,84.09a1,1,0,0,1-.82-.47L81.13,1.42A.94.94,0,0,1,81.94,0h28.58a1,1,0,0,1,.82.47l47.53,82.2a.94.94,0,0,1-.81,1.42Z"/>
+            <path class="mark" d="M135.13,1.42A.94.94,0,0,1,136,0h28.62a.93.93,0,0,1,.81.47l54.49,94.06a.93.93,0,0,1,0,.94l-54.49,94.06a.93.93,0,0,1-.81.47H136a.94.94,0,0,1-.82-1.42L189.34,95Zm-23.26,93.1a1,1,0,0,1,0,1L57.13,189.53a1,1,0,0,1-1.65,0L.13,95.48a1,1,0,0,1,0-1L54.87.47a1,1,0,0,1,1.65,0Z"/>
           </g>
+
+          <!-- Lupa superpuesta, simbolizando "explorer" -->
+          <g>
+            <circle class="glass-bg" cx="68" cy="64" r="22"/>
+            <circle class="glass-ring" cx="68" cy="64" r="22"/>
+            <line class="glass-handle" x1="84" y1="80" x2="100" y2="96"/>
+          </g>
+
+          <!-- Texto: HIVE en rojo + SCOPE en acento cian -->
+          <text x="115" y="68" font-size="54" letter-spacing="1">
+            <tspan class="txt-hive">HIVE</tspan>
+            <tspan class="txt-scope" dx="4">SCOPE</tspan>
+          </text>
         </svg>
-        <span style="font-weight: 700; color: #e31337; font-size: 1.8rem; letter-spacing: 0.05em;">HIVE SCOPE</span>
       </div>
       <p data-i18n="subtitle" class="subtitle-neon">Hive, en tiempo real</p>
     </header>
