@@ -232,10 +232,19 @@ function parseOperation(op) {
       return `👍 ${t('opVote')} (${data.weight / 100}%) ${t('opPost')} <strong>@${data.author}</strong>`;
     case 'comment':
       return data.parent_author ? `💬 ${t('opComment')} <strong>@${data.parent_author}</strong>` : `📝 ${t('opNewPost')}`;
-    case 'claim_reward_balance':
-      return `🎁 ${t('opClaim')}: ${data.reward_hbd} | ${data.reward_hive}`;
+    case 'claim_reward_balance': {
+      const hive = parseFloat(data.reward_hive) || 0;
+      const hbd = parseFloat(data.reward_hbd) || 0;
+      const vests = parseFloat(data.reward_vests) || 0;
+
+      const hp = (typeof vestsToHP === 'function')
+        ? vestsToHP(vests)
+        : (vests * (window.globalVestingFund / window.globalVestingShares) || (vests * 0.000577));
+
+      return `🎁 ${t('opClaim')}: <strong>${hive.toFixed(3)} HIVE</strong>, <strong>${hp.toFixed(3)} HP</strong>, <strong>${hbd.toFixed(3)} HBD</strong>`;
+    }
     case 'custom_json':
-      return `⚡ ${t('opCustom')} ${data.id})`;
+      return `⚡ ${t('opCustom')} (${data.id})`;
     case 'delegate_vesting_shares':
       return `🔄 ${t('opDelegate')} <strong>@${data.delegatee}</strong>`;
     default:
