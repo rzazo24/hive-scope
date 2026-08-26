@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -272,7 +272,7 @@
     <!-- Switcher de Idioma -->
     <div class="top-bar">
   <button id="lang-btn" class="lang-btn">
-    <span id="lang-flag">🇪🇸</span> <span id="lang-label">ES</span>
+    <span id="lang-flag">🇬🇧</span> <span id="lang-label">EN</span>
   </button>
 </div>
     <header>
@@ -309,59 +309,59 @@
           </text>
         </svg>
       </div>
-      <p data-i18n="subtitle" class="subtitle-neon">Hive, en tiempo real</p>
+      <p data-i18n="subtitle" class="subtitle-neon">Hive, in real-time</p>
     </header>
 
     <!-- Buscador -->
     <div class="search-box">
       <input type="text" id="username" placeholder="" list="user-suggestions" autocomplete="off">
       <datalist id="user-suggestions"></datalist>
-      <button id="search-btn" data-i18n="searchBtn">Analizar</button>
+      <button id="search-btn" data-i18n="searchBtn">Analyze</button>
     </div>
 
     <!-- Sección Blockchain Global -->
-    <h2 class="section-title" data-i18n="globalTitle">Red Global Hive</h2>
+    <h2 class="section-title" data-i18n="globalTitle">Global Hive Network</h2>
 
-    <h3 class="subsection-title" data-i18n="sectionNetwork">Estado de la Red</h3>
+    <h3 class="subsection-title" data-i18n="sectionNetwork">Network Status</h3>
     <div class="grid">
-      <div class="card"><div class="label" data-i18n="lastBlock">Último Bloque</div><div class="value" id="global-block">--</div></div>
-      <div class="card"><div class="label" data-i18n="currentWitness">Witness Actual</div><div class="value" id="global-witness">--</div></div>
+      <div class="card"><div class="label" data-i18n="lastBlock">Last Block</div><div class="value" id="global-block">--</div></div>
+      <div class="card"><div class="label" data-i18n="currentWitness">Current Witness</div><div class="value" id="global-witness">--</div></div>
     </div>
 
-    <h3 class="subsection-title" data-i18n="sectionEconomy">Economía</h3>
+    <h3 class="subsection-title" data-i18n="sectionEconomy">Economy</h3>
     <div class="grid">
-      <div class="card"><div class="label" data-i18n="hivePrice">Precio HIVE (Feed)</div><div class="value" id="global-hive-price">--</div></div>
-      <div class="card"><div class="label" data-i18n="hiveSupply">Suministro HIVE</div><div class="value" id="global-hive-supply">--</div></div>
-      <div class="card"><div class="label" data-i18n="virtualSupply">Suministro Virtual</div><div class="value" id="global-virtual-supply">--</div></div>
-      <div class="card"><div class="label" data-i18n="hbdSupply">Suministro HBD</div><div class="value" id="global-hbd-supply">--</div></div>
-      <div class="card"><div class="label" data-i18n="hbdInterest">Interés HBD (APR)</div><div class="value" id="global-hbd-interest">--</div></div>
+      <div class="card"><div class="label" data-i18n="hivePrice">HIVE Price (Feed)</div><div class="value" id="global-hive-price">--</div></div>
+      <div class="card"><div class="label" data-i18n="hiveSupply">HIVE Supply</div><div class="value" id="global-hive-supply">--</div></div>
+      <div class="card"><div class="label" data-i18n="virtualSupply">Virtual Supply</div><div class="value" id="global-virtual-supply">--</div></div>
+      <div class="card"><div class="label" data-i18n="hbdSupply">HBD Supply</div><div class="value" id="global-hbd-supply">--</div></div>
+      <div class="card"><div class="label" data-i18n="hbdInterest">HBD Interest (APR)</div><div class="value" id="global-hbd-interest">--</div></div>
       <div class="card"><div class="label" data-i18n="hbdPrintRate">HBD Print Rate</div><div class="value" id="global-hbd-print-rate">--</div></div>
     </div>
 
     <h3 class="subsection-title" data-i18n="sectionStaking">Staking</h3>
     <div class="grid">
-      <div class="card"><div class="label" data-i18n="hiveStaked">HIVE en Staking (HP)</div><div class="value" id="global-hive-staked">--</div></div>
-      <div class="card"><div class="label" data-i18n="stakeRatio">Ratio de Staking</div><div class="value" id="global-stake-ratio">--</div></div>
+      <div class="card"><div class="label" data-i18n="hiveStaked">Staked HIVE (HP)</div><div class="value" id="global-hive-staked">--</div></div>
+      <div class="card"><div class="label" data-i18n="stakeRatio">Staking Ratio</div><div class="value" id="global-stake-ratio">--</div></div>
     </div>
 
-    <h3 class="subsection-title" data-i18n="sectionRewards">Recompensas y DAO</h3>
+    <h3 class="subsection-title" data-i18n="sectionRewards">Rewards & DAO</h3>
     <div class="grid" style="margin-bottom: 45px;">
-      <div class="card"><div class="label" data-i18n="daoBudget">Fondo DAO (Budget)</div><div class="value" id="global-dao-budget">--</div></div>
-      <div class="card"><div class="label" data-i18n="blockReward">Recompensa / Bloque</div><div class="value" id="global-block-reward">--</div></div>
-      <div class="card"><div class="label" data-i18n="rewardPool">Fondo de Recompensas Total</div><div class="value" id="global-reward-pool">--</div></div>
+      <div class="card"><div class="label" data-i18n="daoBudget">DAO Fund (Budget)</div><div class="value" id="global-dao-budget">--</div></div>
+      <div class="card"><div class="label" data-i18n="blockReward">Block Reward</div><div class="value" id="global-block-reward">--</div></div>
+      <div class="card"><div class="label" data-i18n="rewardPool">Reward Pool</div><div class="value" id="global-reward-pool">--</div></div>
     </div>
 
     <!-- Sección Usuario -->
-<h2 class="section-title" data-i18n="userTitle">Análisis de Cuenta</h2>
+<h2 class="section-title" data-i18n="userTitle">Account Analysis</h2>
 <div id="user-section">
   <div class="card" style="text-align: center; color: var(--text-dim);" data-i18n="userPrompt">
-    Ingresa un usuario en el buscador para analizar su cuenta
+    Enter a username in the search bar to analyze their account
   </div>
 </div>
 
    <!-- Footer -->
   <footer class="site-footer">
-    <p data-i18n="footerText">Hecho con <span class="heart">❤️</span> por <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a></p>
+    <p data-i18n="footerText">Made with <span class="heart">❤️</span> by <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a></p>
   </footer>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>

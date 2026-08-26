@@ -14,7 +14,7 @@ let globalVestingFundHive = 0;
 let globalRewardPool = null;
 let currentHivePrice = 0;
 let currentHbdInterestRate = 0;
-let currentLang = 'es';
+let currentLang = 'en';
 
 // Instancias de gráficos para destruirlos antes de re-renderizar
 let hpChartInstance = null;
@@ -84,9 +84,6 @@ const translations = {
     hbdInterest: "Interés HBD (APR)",
     daoBudget: "Fondo DAO (Budget)",
     blockReward: "Recompensa / Bloque",
-    rewardPool: "Fondo de Recompensas Total",
-    hbdPrintRate: "HBD Print Rate",
-    virtualSupply: "Suministro Virtual",
     sectionNetwork: "Estado de la Red",
     sectionEconomy: "Economía",
     sectionStaking: "Staking",
@@ -175,9 +172,6 @@ const translations = {
     hbdInterest: "HBD Interest (APR)",
     daoBudget: "DAO Fund (Budget)",
     blockReward: "Block Reward",
-    rewardPool: "Total Reward Pool",
-    hbdPrintRate: "HBD Print Rate",
-    virtualSupply: "Virtual Supply",
     sectionNetwork: "Network Status",
     sectionEconomy: "Economy",
     sectionStaking: "Staking",
@@ -904,27 +898,23 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
   });
 }
 
-// Conmutación de idioma optimizada
-function toggleLanguage() {
-  // 1. Cambiar al nuevo idioma
-  currentLang = currentLang === 'es' ? 'en' : 'es';
-  
-  // 2. Actualizar la etiqueta y la bandera del botón al idioma activo
+// Aplica el diccionario de traducciones actual a toda la interfaz
+// (elementos con data-i18n, placeholders, y el botón de idioma)
+function applyTranslations() {
+  const t = translations[currentLang];
+  if (!t) return;
+
+  // Bandera y etiqueta del botón de idioma
   const langLabel = document.getElementById('lang-label');
   if (langLabel) {
     langLabel.textContent = currentLang.toUpperCase();
   }
-
   const langFlag = document.getElementById('lang-flag');
   if (langFlag) {
     langFlag.textContent = currentLang === 'es' ? '🇪🇸' : '🇬🇧';
   }
 
-  // 3. Obtener traducciones
-  const t = translations[currentLang];
-  if (!t) return;
-
-  // 4. Traducir elementos estáticos del HTML con data-i18n
+  // Elementos estáticos del HTML con data-i18n
   document.querySelectorAll('[data-i18n]').forEach(elem => {
     const key = elem.getAttribute('data-i18n');
     if (t[key] !== undefined) {
@@ -932,7 +922,7 @@ function toggleLanguage() {
     }
   });
 
-  // 5. Traducir placeholders de inputs
+  // Placeholders de inputs
   document.querySelectorAll('[data-i18n-placeholder]').forEach(elem => {
     const key = elem.getAttribute('data-i18n-placeholder');
     if (t[key] !== undefined) {
@@ -940,7 +930,16 @@ function toggleLanguage() {
     }
   });
 
-  // 6. Recargar y volver a renderizar los datos del usuario (incluyendo las actividades traducidas)
+  // Atributo lang del documento, por accesibilidad y SEO
+  document.documentElement.lang = currentLang;
+}
+
+// Conmutación de idioma optimizada
+function toggleLanguage() {
+  currentLang = currentLang === 'es' ? 'en' : 'es';
+  applyTranslations();
+
+  // Recargar y volver a renderizar los datos del usuario (incluyendo las actividades traducidas)
   const usernameInput = document.getElementById('username');
   if (usernameInput && usernameInput.value.trim() !== '') {
     loadUserData();
@@ -979,6 +978,10 @@ async function handleUserAutocomplete(event) {
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', async () => {
+  // Aplica el idioma por defecto (inglés) antes de cargar cualquier dato,
+  // así el texto estático del HTML queda sincronizado con currentLang
+  applyTranslations();
+
   const usernameInput = document.getElementById('username');
   if (usernameInput) {
     usernameInput.addEventListener('input', handleUserAutocomplete);
