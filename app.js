@@ -15,6 +15,7 @@ let globalRewardPool = null;
 let currentHivePrice = 0;
 let currentHbdInterestRate = 0;
 let currentLang = 'en';
+let currentHistoryFilter = 'all';
 
 // Instancias de gráficos para destruirlos antes de re-renderizar
 let hpChartInstance = null;
@@ -343,21 +344,25 @@ function calculateVoteValue(userEffVests, votingPowerBasis = 10000) {
   return { hive: voteValueHive, usd: voteValueHive * currentHivePrice };
 }
 
-// Agrupa el tipo de operación en una categoría de filtro
-function getOperationCategory(type) {
+// Agrupa una operación en una categoría de filtro
+function getOperationCategory(op) {
+  const [type, data] = op;
   switch (type) {
     case 'transfer':
       return 'transfers';
     case 'vote':
-    case 'effective_comment_vote':
       return 'votes';
     case 'comment':
-      return 'posts';
+      // Solo los posts nuevos cuentan como "posts"; las respuestas van a "other",
+      // igual que parseOperation() las distingue visualmente (📝 vs 💬).
+      return data.parent_author ? 'other' : 'posts';
     case 'claim_reward_balance':
     case 'curation_reward':
     case 'author_reward':
       return 'rewards';
     default:
+      // effective_comment_vote es una virtual op que duplica el 'vote' ya emitido
+      // por el usuario, así que no se agrupa con "votes" para evitar verlo dos veces.
       return 'other';
   }
 }
@@ -852,7 +857,7 @@ function buildHistoryHTML(historyData, filterKey = 'all') {
 
   const filtered = filterKey === 'all'
     ? historyData
-    : historyData.filter(item => getOperationCategory(item[1].op[0]) === filterKey);
+    : historyData.filter(item => getOperationCategory(item[1].op) === filterKey);
 
   if (filtered.length === 0) {
     return `<p style="color: var(--text-dim);">${getTranslation('noFilteredHistory')}</p>`;
@@ -894,12 +899,12 @@ function renderHistorySection(historyData) {
   ];
 
   const filterButtonsHTML = filters.map(f => `
-    <button class="history-filter-btn${f.key === 'all' ? ' active' : ''}" data-filter="${f.key}" data-i18n="${f.i18n}">${getTranslation(f.i18n)}</button>
+    <button class="history-filter-btn${f.key === currentHistoryFilter ? ' active' : ''}" data-filter="${f.key}" data-i18n="${f.i18n}">${getTranslation(f.i18n)}</button>
   `).join('');
 
   return `
     <div class="history-filters">${filterButtonsHTML}</div>
-    <div id="history-list">${buildHistoryHTML(historyData, 'all')}</div>
+    <div id="history-list">${buildHistoryHTML(historyData, currentHistoryFilter)}</div>
   `;
 }
 
@@ -913,7 +918,8 @@ function setupHistoryFilters(historyData) {
     btn.addEventListener('click', () => {
       buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      listContainer.innerHTML = buildHistoryHTML(historyData, btn.getAttribute('data-filter'));
+      currentHistoryFilter = btn.getAttribute('data-filter');
+      listContainer.innerHTML = buildHistoryHTML(historyData, currentHistoryFilter);
     });
   });
 }
