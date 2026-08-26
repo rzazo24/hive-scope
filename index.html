@@ -264,6 +264,33 @@
       color: var(--text-dim, #94a3b8);
       font-family: monospace;
     }
+
+    .history-filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .history-filter-btn {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-sub);
+      border: 1px solid var(--card-border);
+      padding: 6px 14px;
+      border-radius: 99px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .history-filter-btn:hover {
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .history-filter-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
   </style>
 </head>
 <body>

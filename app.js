@@ -110,6 +110,13 @@ const translations = {
     noBio: "Sin biografía disponible.",
     recentHistory: "Actividad Reciente",
     noHistory: "No hay movimientos recientes registrados.",
+    noFilteredHistory: "No hay movimientos de este tipo.",
+    filterAll: "Todo",
+    filterTransfers: "Transferencias",
+    filterPosts: "Publicaciones",
+    filterVotes: "Votos",
+    filterRewards: "Recompensas",
+    filterOther: "Otros",
     hpDistribution: "Distribución de HP",
     balanceBreakdown: "Desglose de Balances ($USD)",
     chartHpOwn: "Propio",
@@ -198,6 +205,13 @@ const translations = {
     noBio: "No bio available.",
     recentHistory: "Recent Activity",
     noHistory: "No recent activity found.",
+    noFilteredHistory: "No activity of this type found.",
+    filterAll: "All",
+    filterTransfers: "Transfers",
+    filterPosts: "Posts",
+    filterVotes: "Votes",
+    filterRewards: "Rewards",
+    filterOther: "Other",
     hpDistribution: "HP Distribution",
     balanceBreakdown: "Balance Breakdown ($USD)",
     chartHpOwn: "Own",
@@ -327,6 +341,25 @@ function calculateVoteValue(userEffVests, votingPowerBasis = 10000) {
 
   const voteValueHive = (rshares / recentClaims) * rewardBalance;
   return { hive: voteValueHive, usd: voteValueHive * currentHivePrice };
+}
+
+// Agrupa el tipo de operación en una categoría de filtro
+function getOperationCategory(type) {
+  switch (type) {
+    case 'transfer':
+      return 'transfers';
+    case 'vote':
+    case 'effective_comment_vote':
+      return 'votes';
+    case 'comment':
+      return 'posts';
+    case 'claim_reward_balance':
+    case 'curation_reward':
+    case 'author_reward':
+      return 'rewards';
+    default:
+      return 'other';
+  }
 }
 
 // Formatear operaciones de la blockchain con traducción dinámica
@@ -491,7 +524,7 @@ async function loadUserData() {
 
     try {
       profileData = await fetchHiveNodes('bridge.get_profile', { account: usernameInput });
-      historyData = await fetchHiveNodes('condenser_api.get_account_history', [usernameInput, -1, 50]);
+      historyData = await fetchHiveNodes('condenser_api.get_account_history', [usernameInput, -1, 100]);
     } catch (e) {
       console.warn("No se pudieron obtener datos secundarios del usuario:", e);
     }
@@ -661,35 +694,6 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
   // Resource Credits (RC)
   const rcPercent = calculateRCPercent(rcAccount);
 
-  // Historial Reciente con ID de transacción / número correlativo
-  let historyHTML = '';
-  if (historyData && historyData.length > 0) {
-    historyHTML = historyData.slice().reverse().map(item => {
-      const index = item[0];       // Número de secuencia en la cuenta
-      const opData = item[1];      // Contenido del evento
-      const op = opData.op;
-      const trxId = opData.trx_id; // ID único de la transacción
-      const timestamp = new Date(opData.timestamp + 'Z').toLocaleString();
-
-      // Muestra hash enlazado a hive block explorer o el número de secuencia (#)
-      const shortTrx = (trxId && trxId !== '0000000000000000000000000000000000000000')
-  ? `<a href="https://hiveblockexplorer.com/tx/${trxId}" target="_blank" rel="noopener" class="trx-link">#${trxId.substring(0, 8)}</a>`
-  : `<span class="trx-num">#${index}</span>`;
-
-      return `
-        <div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9em;">
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px;">
-            <div>${parseOperation(op)}</div>
-            <div style="font-family: monospace; font-size: 0.8em; flex-shrink: 0;">${shortTrx}</div>
-          </div>
-          <div style="color: var(--text-dim); font-size: 0.8em;">${timestamp}</div>
-        </div>
-      `;
-    }).join('');
-  } else {
-    historyHTML = `<p style="color: var(--text-dim);">${t.noHistory}</p>`;
-  }
-
   container.innerHTML = `
     <div class="profile-card">
       <img src="${escapeHtml(avatarUrl)}" class="profile-avatar" alt="${escapeHtml(user.name)}" onerror="this.src='https://images.hive.blog/u/${escapeHtml(user.name)}/avatar'">
@@ -831,12 +835,87 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
 
     <div class="card" style="margin-top: 20px;">
       <h3 style="margin-bottom: 12px; font-size: 1.1em; color: var(--accent);" data-i18n="recentHistory">${t.recentHistory}</h3>
-      <div>${historyHTML}</div>
+      ${renderHistorySection(historyData)}
     </div>
   `;
 
   // Inicializar Gráficos después de inyectar el HTML
   renderCharts(ownHP, recHP, delHP, parseFloat(user.balance), parseFloat(user.hbd_balance), effHP);
+  setupHistoryFilters(historyData);
+}
+
+// Construye el HTML de la lista de actividad, opcionalmente filtrada por categoría
+function buildHistoryHTML(historyData, filterKey = 'all') {
+  if (!historyData || historyData.length === 0) {
+    return `<p style="color: var(--text-dim);">${getTranslation('noHistory')}</p>`;
+  }
+
+  const filtered = filterKey === 'all'
+    ? historyData
+    : historyData.filter(item => getOperationCategory(item[1].op[0]) === filterKey);
+
+  if (filtered.length === 0) {
+    return `<p style="color: var(--text-dim);">${getTranslation('noFilteredHistory')}</p>`;
+  }
+
+  return filtered.slice().reverse().map(item => {
+    const index = item[0];       // Número de secuencia en la cuenta
+    const opData = item[1];      // Contenido del evento
+    const op = opData.op;
+    const trxId = opData.trx_id; // ID único de la transacción
+    const timestamp = new Date(opData.timestamp + 'Z').toLocaleString();
+
+    // Muestra hash enlazado a hive block explorer o el número de secuencia (#)
+    const shortTrx = (trxId && trxId !== '0000000000000000000000000000000000000000')
+      ? `<a href="https://hiveblockexplorer.com/tx/${trxId}" target="_blank" rel="noopener" class="trx-link">#${trxId.substring(0, 8)}</a>`
+      : `<span class="trx-num">#${index}</span>`;
+
+    return `
+      <div style="padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9em;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 4px;">
+          <div>${parseOperation(op)}</div>
+          <div style="font-family: monospace; font-size: 0.8em; flex-shrink: 0;">${shortTrx}</div>
+        </div>
+        <div style="color: var(--text-dim); font-size: 0.8em;">${timestamp}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Construye la barra de filtros y el contenedor de la lista de actividad
+function renderHistorySection(historyData) {
+  const filters = [
+    { key: 'all', i18n: 'filterAll' },
+    { key: 'transfers', i18n: 'filterTransfers' },
+    { key: 'posts', i18n: 'filterPosts' },
+    { key: 'votes', i18n: 'filterVotes' },
+    { key: 'rewards', i18n: 'filterRewards' },
+    { key: 'other', i18n: 'filterOther' }
+  ];
+
+  const filterButtonsHTML = filters.map(f => `
+    <button class="history-filter-btn${f.key === 'all' ? ' active' : ''}" data-filter="${f.key}" data-i18n="${f.i18n}">${getTranslation(f.i18n)}</button>
+  `).join('');
+
+  return `
+    <div class="history-filters">${filterButtonsHTML}</div>
+    <div id="history-list">${buildHistoryHTML(historyData, 'all')}</div>
+  `;
+}
+
+// Conecta los botones de filtro con el contenedor de la lista, sin recargar datos
+function setupHistoryFilters(historyData) {
+  const buttons = document.querySelectorAll('.history-filter-btn');
+  const listContainer = document.getElementById('history-list');
+  if (!listContainer) return;
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      listContainer.innerHTML = buildHistoryHTML(historyData, btn.getAttribute('data-filter'));
+    });
+  });
 }
 
 // Generación de Gráficos con Chart.js
