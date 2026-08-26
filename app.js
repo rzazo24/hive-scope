@@ -310,22 +310,22 @@ function calculateRCPercent(rcAccount) {
   return ((regenerated / maxRC) * 100).toFixed(2);
 }
 
-// Calcular valor estimado de un voto al 100% en USD
+// Calcular valor estimado de un voto al 100%, en HIVE y su equivalente en USD
 function calculateVoteValue(userEffVests) {
-  if (!globalRewardPool || !currentHivePrice || userEffVests <= 0) return 0;
+  if (!globalRewardPool || userEffVests <= 0) return { hive: 0, usd: 0 };
 
   const rawRewardBalance = globalRewardPool.reward_balance || globalRewardPool.balance || "0 HIVE";
   const rewardBalance = parseFloat(rawRewardBalance.split(' ')[0]);
   const recentClaims = parseFloat(globalRewardPool.recent_claims || 0);
 
-  if (!rewardBalance || !recentClaims) return 0;
+  if (!rewardBalance || !recentClaims) return { hive: 0, usd: 0 };
 
   const vestsInBase = userEffVests * 1e6;
   const power = (10000 * 10000 / 10000) / 50; 
   const rshares = (power * vestsInBase) / 10000;
 
   const voteValueHive = (rshares / recentClaims) * rewardBalance;
-  return voteValueHive * currentHivePrice;
+  return { hive: voteValueHive, usd: voteValueHive * currentHivePrice };
 }
 
 // Formatear operaciones de la blockchain con traducción dinámica
@@ -555,7 +555,7 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
 
   // Valor de voto al 100% en USD
   const effVests = ownVests + recVests - delVests;
-  const voteValueUSD = calculateVoteValue(effVests);
+  const voteValue = calculateVoteValue(effVests);
 
   // Voting Mana
   let manaPercent = "100.00";
@@ -711,8 +711,8 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
       </div>
       <div class="card">
         <div class="label" data-i18n="voteValue">${t.voteValue}</div>
-        <div class="value" style="color:var(--success);">$${voteValueUSD.toFixed(3)} USD</div>
-        <div class="subvalue" data-i18n="voteEstimateSub">${t.voteEstimateSub}</div>
+        <div class="value" style="color:var(--success);">${formatNumber(voteValue.hive, {maximumFractionDigits: 3})} HIVE</div>
+        <div class="subvalue">≈ $${formatNumber(voteValue.usd, {maximumFractionDigits: 3})} USD • <span data-i18n="voteEstimateSub">${t.voteEstimateSub}</span></div>
       </div>
       <div class="card">
         <div class="label" data-i18n="effHP">${t.effHP}</div>
