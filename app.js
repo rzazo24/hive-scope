@@ -129,6 +129,8 @@ const translations = {
     opDelegate: "Delegación de HP a",
     opGeneric: "Operación:",
     voteEstimateSub: "Estimación con 100% de Mana y Peso",
+    voteCurrentMana: "Con tu mana actual",
+    voteFullMana: "Al 100% de mana",
     userPrompt: "Ingresa un usuario en el buscador para analizar su cuenta",
     footerText: 'Hecho con ❤️ por <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>',
     opCurationReward: "Recompensa de curación",
@@ -218,6 +220,8 @@ const translations = {
     opDelegate: "HP Delegation to",
     opGeneric: "Operation:",
     voteEstimateSub: "Estimation with 100% Mana and Weight",
+    voteCurrentMana: "With your current mana",
+    voteFullMana: "At 100% mana",
     userPrompt: "Enter a username in the search bar to analyze their account",
     footerText: 'Made with ❤️ by <a href="https://peakd.com/@rzazo24" target="_blank" rel="noopener">@rzazo24</a>',
     opCurationReward: "Curation reward",
@@ -310,8 +314,9 @@ function calculateRCPercent(rcAccount) {
   return ((regenerated / maxRC) * 100).toFixed(2);
 }
 
-// Calcular valor estimado de un voto al 100%, en HIVE y su equivalente en USD
-function calculateVoteValue(userEffVests) {
+// Calcular valor estimado de un voto, en HIVE y su equivalente en USD.
+// votingPowerBasis va de 0 a 10000 (10000 = 100% de mana). Por defecto, 100%.
+function calculateVoteValue(userEffVests, votingPowerBasis = 10000) {
   if (!globalRewardPool || userEffVests <= 0) return { hive: 0, usd: 0 };
 
   const rawRewardBalance = globalRewardPool.reward_balance || globalRewardPool.balance || "0 HIVE";
@@ -320,8 +325,10 @@ function calculateVoteValue(userEffVests) {
 
   if (!rewardBalance || !recentClaims) return { hive: 0, usd: 0 };
 
+  // Los VESTS de la API tienen 6 decimales; para casar con la escala interna
+  // de "recent_claims" hay que convertirlos a su unidad entera (x 1,000,000).
   const vestsInBase = userEffVests * 1e6;
-  const power = (10000 * 10000 / 10000) / 50; 
+  const power = (votingPowerBasis * 10000 / 10000) / 50 + 1;
   const rshares = (power * vestsInBase) / 10000;
 
   const voteValueHive = (rshares / recentClaims) * rewardBalance;
@@ -553,9 +560,7 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
   const delHP = vestsToHP(delVests);
   const effHP = ownHP + recHP - delHP;
 
-  // Valor de voto al 100% en USD
   const effVests = ownVests + recVests - delVests;
-  const voteValue = calculateVoteValue(effVests);
 
   // Voting Mana
   let manaPercent = "100.00";
@@ -572,6 +577,11 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
       manaPercent = ((regeneratedMana / maxMana) * 100).toFixed(2);
     }
   }
+
+  // Valor del voto: con la mana actual real (comparable con PeakD) y estimado al 100%
+  const manaPercentNum = parseFloat(manaPercent);
+  const voteValueCurrent = calculateVoteValue(effVests, manaPercentNum * 100);
+  const voteValueFull = calculateVoteValue(effVests, 10000);
 
   // Metadatos y perfil
   let metadata = {};
@@ -711,8 +721,9 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
       </div>
       <div class="card">
         <div class="label" data-i18n="voteValue">${t.voteValue}</div>
-        <div class="value" style="color:var(--success);">${formatNumber(voteValue.hive, {maximumFractionDigits: 3})} HIVE</div>
-        <div class="subvalue">≈ $${formatNumber(voteValue.usd, {maximumFractionDigits: 3})} USD • <span data-i18n="voteEstimateSub">${t.voteEstimateSub}</span></div>
+        <div class="value" style="color:var(--success);">${formatNumber(voteValueCurrent.hive, {maximumFractionDigits: 3})} HIVE</div>
+        <div class="subvalue">≈ $${formatNumber(voteValueCurrent.usd, {maximumFractionDigits: 3})} USD • ${t.voteCurrentMana}</div>
+        <div class="subvalue" style="margin-top:2px; color:var(--text-muted);">${t.voteFullMana}: ${formatNumber(voteValueFull.hive, {maximumFractionDigits: 3})} HIVE</div>
       </div>
       <div class="card">
         <div class="label" data-i18n="effHP">${t.effHP}</div>
