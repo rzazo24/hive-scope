@@ -615,7 +615,7 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
   const savingsHiveNum = parseFloat(user.savings_balance || 0);
   const savingsHbdNum = parseFloat(user.savings_hbd_balance || 0);
   const portfolioUSD = ((hiveBalanceNum + savingsHiveNum) * currentHivePrice)
-    + (effHP * currentHivePrice)
+    + (ownHP * currentHivePrice)
     + (hbdBalanceNum + savingsHbdNum);
 
   // Último voto emitido
