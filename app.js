@@ -84,6 +84,12 @@ const translations = {
     hbdInterest: "Interés HBD (APR)",
     daoBudget: "Fondo DAO (Budget)",
     blockReward: "Recompensa / Bloque",
+    rewardPool: "Fondo de Recompensas Total",
+    hbdPrintRate: "HBD Print Rate",
+    virtualSupply: "Suministro Virtual",
+    rewardPool: "Fondo de Recompensas",
+    hbdPrintRate: "HBD Print Rate",
+    virtualSupply: "Suministro Virtual",
     loading: "Cargando datos...",
     notFound: "Usuario no encontrado en la blockchain.",
     createdOn: "Registrado el",
@@ -159,6 +165,12 @@ const translations = {
     hbdInterest: "HBD Interest (APR)",
     daoBudget: "DAO Fund (Budget)",
     blockReward: "Block Reward",
+    rewardPool: "Total Reward Pool",
+    hbdPrintRate: "HBD Print Rate",
+    virtualSupply: "Virtual Supply",
+    rewardPool: "Reward Pool",
+    hbdPrintRate: "HBD Print Rate",
+    virtualSupply: "Virtual Supply",
     loading: "Loading data...",
     notFound: "User not found on the blockchain.",
     createdOn: "Joined on",
@@ -409,6 +421,24 @@ async function loadGlobalStats() {
     
     document.getElementById('global-dao-budget').innerText = daoBalanceStr;
     document.getElementById('global-block-reward').innerText = '1.25 HIVE';
+
+    // Fondo de recompensas total (HIVE + equivalente USD)
+    if (globalRewardPool && globalRewardPool.reward_balance) {
+      const rewardPoolHive = parseFloat(globalRewardPool.reward_balance.split(' ')[0]) || 0;
+      const rewardPoolUSD = rewardPoolHive * currentHivePrice;
+      document.getElementById('global-reward-pool').innerText = `${formatNumber(Math.round(rewardPoolHive))} HIVE ($${formatNumber(rewardPoolUSD, {maximumFractionDigits: 0})})`;
+    }
+
+    // HBD Print Rate (props.hbd_print_rate va de 0 a 10000, siendo 10000 = 100%)
+    const rawPrintRate = props.hbd_print_rate !== undefined ? props.hbd_print_rate : 10000;
+    const printRatePercent = (parseFloat(rawPrintRate) / 100).toFixed(1);
+    document.getElementById('global-hbd-print-rate').innerText = isNaN(printRatePercent) ? '--' : `${printRatePercent}%`;
+
+    // Suministro Virtual (HIVE líquido + HIVE equivalente en staking)
+    if (props.virtual_supply) {
+      const virtualSupplyNum = parseFloat(props.virtual_supply.split(' ')[0]) || 0;
+      document.getElementById('global-virtual-supply').innerText = `${formatNumber(Math.round(virtualSupplyNum))} HIVE`;
+    }
 
   } catch (error) {
     console.error('Error cargando estadísticas globales:', error);
