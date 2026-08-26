@@ -87,6 +87,10 @@ const translations = {
     rewardPool: "Fondo de Recompensas Total",
     hbdPrintRate: "HBD Print Rate",
     virtualSupply: "Suministro Virtual",
+    sectionNetwork: "Estado de la Red",
+    sectionEconomy: "Economía",
+    sectionStaking: "Staking",
+    sectionRewards: "Recompensas y DAO",
     rewardPool: "Fondo de Recompensas",
     hbdPrintRate: "HBD Print Rate",
     virtualSupply: "Suministro Virtual",
@@ -148,7 +152,11 @@ const translations = {
     portfolioValue: "Valor Total del Portfolio",
     lastVote: "Último Voto Emitido",
     hbdInterestEstimate: "Interés Anual Estimado (HBD Savings)",
-    neverVoted: "Sin votos registrados"
+    neverVoted: "Sin votos registrados",
+    sectionVotingPower: "Poder de Voto y Staking",
+    sectionBalances: "Balances y Patrimonio",
+    sectionActivity: "Actividad",
+    sectionGovernanceRes: "Gobernanza y Recursos"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -168,6 +176,10 @@ const translations = {
     rewardPool: "Total Reward Pool",
     hbdPrintRate: "HBD Print Rate",
     virtualSupply: "Virtual Supply",
+    sectionNetwork: "Network Status",
+    sectionEconomy: "Economy",
+    sectionStaking: "Staking",
+    sectionRewards: "Rewards & DAO",
     rewardPool: "Reward Pool",
     hbdPrintRate: "HBD Print Rate",
     virtualSupply: "Virtual Supply",
@@ -229,7 +241,11 @@ const translations = {
     portfolioValue: "Total Portfolio Value",
     lastVote: "Last Vote Cast",
     hbdInterestEstimate: "Estimated Annual Interest (HBD Savings)",
-    neverVoted: "No votes recorded"
+    neverVoted: "No votes recorded",
+    sectionVotingPower: "Voting Power & Staking",
+    sectionBalances: "Balances & Net Worth",
+    sectionActivity: "Activity",
+    sectionGovernanceRes: "Governance & Resources"
   }
 };
 
@@ -681,8 +697,9 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
       </div>
     </div>
 
-    <!-- Métrica Mana & Valor del Voto en USD -->
-    <div class="grid" style="margin-bottom: 20px;">
+    <!-- Poder de Voto y Staking -->
+    <h3 class="subsection-title" data-i18n="sectionVotingPower">${t.sectionVotingPower}</h3>
+    <div class="grid">
       <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span class="label" data-i18n="mana">${t.mana}</span>
@@ -697,73 +714,16 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
         <div class="value" style="color:var(--success);">$${voteValueUSD.toFixed(3)} USD</div>
         <div class="subvalue" data-i18n="voteEstimateSub">${t.voteEstimateSub}</div>
       </div>
-    </div>
-
-    <div class="grid">
       <div class="card">
         <div class="label" data-i18n="effHP">${t.effHP}</div>
         <div class="value">${formatNumber(effHP, {maximumFractionDigits: 2})} HP</div>
         <div class="subvalue"><span data-i18n="ownHP">${t.ownHP}</span>: ${formatNumber(ownHP, {maximumFractionDigits: 0})} HP</div>
       </div>
-
       <div class="card">
         <div class="label" data-i18n="delegations">${t.delegations}</div>
         <div class="value" style="color:var(--accent);">+${formatNumber(recHP, {maximumFractionDigits: 0})} HP</div>
         <div class="subvalue" style="color:var(--primary);"><span data-i18n="outgoing">${t.outgoing}</span>: -${formatNumber(delHP, {maximumFractionDigits: 0})} HP</div>
       </div>
-
-      <div class="card">
-        <div class="label" data-i18n="balanceHive">${t.balanceHive}</div>
-        <div class="value">${formatNumber(user.balance)} HIVE</div>
-        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${formatNumber(user.savings_balance)} HIVE</div>
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="balanceHbd">${t.balanceHbd}</div>
-        <div class="value">${formatNumber(user.hbd_balance)} HBD</div>
-        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${formatNumber(user.savings_hbd_balance)} HBD</div>
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="postCount">${t.postCount}</div>
-        <div class="value">${formatNumber(postCount)}</div>
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="lastPost">${t.lastPost}</div>
-        <div class="value">${escapeHtml(lastPostText)}</div>
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="resourceCredits">${t.resourceCredits}</div>
-        <div class="value" style="color:${rcPercent !== null ? 'var(--success)' : 'var(--text-muted)'};">${rcPercent !== null ? rcPercent + '%' : '--'}</div>
-        ${rcPercent !== null ? `<div class="progress-bar-container" style="margin-top:10px;"><div class="progress-bar" style="width: ${Math.min(100, Math.max(0, parseFloat(rcPercent)))}%;"></div></div>` : ''}
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="accountAge">${t.accountAge}</div>
-        <div class="value">${formatNumber(accountAgeDays)} <span style="font-size:0.9rem; color:var(--text-muted);" data-i18n="daysAgo">${t.daysAgo}</span></div>
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="witnessesVoted">${t.witnessesVoted}</div>
-        <div class="value">${witnessesVotedCount} / 30</div>
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="pendingRewards">${t.pendingRewards}</div>
-        <div class="value" style="color:${hasPendingRewards ? 'var(--success)' : 'var(--text-muted)'};">
-          ${hasPendingRewards ? `${formatNumber(pendingHP, {maximumFractionDigits: 3})} HP` : '--'}
-        </div>
-        ${hasPendingRewards ? `<div class="subvalue">${formatNumber(pendingHive, {maximumFractionDigits: 3})} HIVE • ${formatNumber(pendingHbd, {maximumFractionDigits: 3})} HBD</div>` : ''}
-      </div>
-
-      <div class="card">
-        <div class="label" data-i18n="lastComment">${t.lastComment}</div>
-        <div class="value">${lastComment ? new Date(lastComment.timestamp + 'Z').toLocaleDateString() : escapeHtml(t.noRecentComment)}</div>
-        ${lastComment ? `<div class="subvalue">${t.opComment} <strong>@${escapeHtml(lastComment.parentAuthor)}</strong></div>` : ''}
-      </div>
-
       <div class="card">
         <div class="label" data-i18n="powerDown">${t.powerDown}</div>
         <div class="value" style="color:${isPoweringDown ? 'var(--primary)' : 'var(--text-muted)'};">
@@ -771,26 +731,80 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
         </div>
         ${isPoweringDown ? `<div class="subvalue">-${formatNumber(powerDownWeeklyHP, {maximumFractionDigits: 3})} HP / ${t.perWeek}${nextWithdrawalText ? ` • ${t.nextPayout}: ${nextWithdrawalText}` : ''}</div>` : ''}
       </div>
+    </div>
 
+    <!-- Balances y Patrimonio -->
+    <h3 class="subsection-title" data-i18n="sectionBalances">${t.sectionBalances}</h3>
+    <div class="grid">
       <div class="card">
-        <div class="label" data-i18n="followers">${t.followers}</div>
-        <div class="value">${followerCount !== null ? formatNumber(followerCount) : '--'} / ${followingCount !== null ? formatNumber(followingCount) : '--'}</div>
+        <div class="label" data-i18n="balanceHive">${t.balanceHive}</div>
+        <div class="value">${formatNumber(user.balance)} HIVE</div>
+        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${formatNumber(user.savings_balance)} HIVE</div>
       </div>
-
+      <div class="card">
+        <div class="label" data-i18n="balanceHbd">${t.balanceHbd}</div>
+        <div class="value">${formatNumber(user.hbd_balance)} HBD</div>
+        <div class="subvalue"><span data-i18n="savings">${t.savings}</span>: ${formatNumber(user.savings_hbd_balance)} HBD</div>
+      </div>
       <div class="card">
         <div class="label" data-i18n="portfolioValue">${t.portfolioValue}</div>
         <div class="value" style="color:var(--success);">$${formatNumber(portfolioUSD, {maximumFractionDigits: 2})} USD</div>
       </div>
-
-      <div class="card">
-        <div class="label" data-i18n="lastVote">${t.lastVote}</div>
-        <div class="value">${escapeHtml(lastVoteText)}</div>
-      </div>
-
       <div class="card">
         <div class="label" data-i18n="hbdInterestEstimate">${t.hbdInterestEstimate}</div>
         <div class="value" style="color:var(--success);">+${formatNumber(hbdInterestAnnualEstimate, {maximumFractionDigits: 3})} HBD</div>
         <div class="subvalue">${currentHbdInterestRate}% APR</div>
+      </div>
+    </div>
+
+    <!-- Actividad -->
+    <h3 class="subsection-title" data-i18n="sectionActivity">${t.sectionActivity}</h3>
+    <div class="grid">
+      <div class="card">
+        <div class="label" data-i18n="postCount">${t.postCount}</div>
+        <div class="value">${formatNumber(postCount)}</div>
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="lastPost">${t.lastPost}</div>
+        <div class="value">${escapeHtml(lastPostText)}</div>
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="lastComment">${t.lastComment}</div>
+        <div class="value">${lastComment ? new Date(lastComment.timestamp + 'Z').toLocaleDateString() : escapeHtml(t.noRecentComment)}</div>
+        ${lastComment ? `<div class="subvalue">${t.opComment} <strong>@${escapeHtml(lastComment.parentAuthor)}</strong></div>` : ''}
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="lastVote">${t.lastVote}</div>
+        <div class="value">${escapeHtml(lastVoteText)}</div>
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="accountAge">${t.accountAge}</div>
+        <div class="value">${formatNumber(accountAgeDays)} <span style="font-size:0.9rem; color:var(--text-muted);" data-i18n="daysAgo">${t.daysAgo}</span></div>
+      </div>
+    </div>
+
+    <!-- Gobernanza y Recursos -->
+    <h3 class="subsection-title" data-i18n="sectionGovernanceRes">${t.sectionGovernanceRes}</h3>
+    <div class="grid">
+      <div class="card">
+        <div class="label" data-i18n="witnessesVoted">${t.witnessesVoted}</div>
+        <div class="value">${witnessesVotedCount} / 30</div>
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="pendingRewards">${t.pendingRewards}</div>
+        <div class="value" style="color:${hasPendingRewards ? 'var(--success)' : 'var(--text-muted)'};">
+          ${hasPendingRewards ? `${formatNumber(pendingHP, {maximumFractionDigits: 3})} HP` : '--'}
+        </div>
+        ${hasPendingRewards ? `<div class="subvalue">${formatNumber(pendingHive, {maximumFractionDigits: 3})} HIVE • ${formatNumber(pendingHbd, {maximumFractionDigits: 3})} HBD</div>` : ''}
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="resourceCredits">${t.resourceCredits}</div>
+        <div class="value" style="color:${rcPercent !== null ? 'var(--success)' : 'var(--text-muted)'};">${rcPercent !== null ? rcPercent + '%' : '--'}</div>
+        ${rcPercent !== null ? `<div class="progress-bar-container" style="margin-top:10px;"><div class="progress-bar" style="width: ${Math.min(100, Math.max(0, parseFloat(rcPercent)))}%;"></div></div>` : ''}
+      </div>
+      <div class="card">
+        <div class="label" data-i18n="followers">${t.followers}</div>
+        <div class="value">${followerCount !== null ? formatNumber(followerCount) : '--'} / ${followingCount !== null ? formatNumber(followingCount) : '--'}</div>
       </div>
     </div>
 

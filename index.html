@@ -127,6 +127,26 @@
       border-radius: 2px;
     }
 
+    .subsection-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 28px 0 14px 0;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .subsection-title:first-child { margin-top: 0; }
+    .subsection-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px;
+      height: 14px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
     /* Grids & Cards */
     .grid {
       display: grid;
@@ -301,20 +321,34 @@
 
     <!-- Sección Blockchain Global -->
     <h2 class="section-title" data-i18n="globalTitle">Red Global Hive</h2>
-    <div class="grid" id="global-grid">
+
+    <h3 class="subsection-title" data-i18n="sectionNetwork">Estado de la Red</h3>
+    <div class="grid">
       <div class="card"><div class="label" data-i18n="lastBlock">Último Bloque</div><div class="value" id="global-block">--</div></div>
       <div class="card"><div class="label" data-i18n="currentWitness">Witness Actual</div><div class="value" id="global-witness">--</div></div>
+    </div>
+
+    <h3 class="subsection-title" data-i18n="sectionEconomy">Economía</h3>
+    <div class="grid">
       <div class="card"><div class="label" data-i18n="hivePrice">Precio HIVE (Feed)</div><div class="value" id="global-hive-price">--</div></div>
-      <div class="card"><div class="label" data-i18n="hiveStaked">HIVE en Staking (HP)</div><div class="value" id="global-hive-staked">--</div></div>
-      <div class="card"><div class="label" data-i18n="stakeRatio">Ratio de Staking</div><div class="value" id="global-stake-ratio">--</div></div>
       <div class="card"><div class="label" data-i18n="hiveSupply">Suministro HIVE</div><div class="value" id="global-hive-supply">--</div></div>
+      <div class="card"><div class="label" data-i18n="virtualSupply">Suministro Virtual</div><div class="value" id="global-virtual-supply">--</div></div>
       <div class="card"><div class="label" data-i18n="hbdSupply">Suministro HBD</div><div class="value" id="global-hbd-supply">--</div></div>
       <div class="card"><div class="label" data-i18n="hbdInterest">Interés HBD (APR)</div><div class="value" id="global-hbd-interest">--</div></div>
+      <div class="card"><div class="label" data-i18n="hbdPrintRate">HBD Print Rate</div><div class="value" id="global-hbd-print-rate">--</div></div>
+    </div>
+
+    <h3 class="subsection-title" data-i18n="sectionStaking">Staking</h3>
+    <div class="grid">
+      <div class="card"><div class="label" data-i18n="hiveStaked">HIVE en Staking (HP)</div><div class="value" id="global-hive-staked">--</div></div>
+      <div class="card"><div class="label" data-i18n="stakeRatio">Ratio de Staking</div><div class="value" id="global-stake-ratio">--</div></div>
+    </div>
+
+    <h3 class="subsection-title" data-i18n="sectionRewards">Recompensas y DAO</h3>
+    <div class="grid" style="margin-bottom: 45px;">
       <div class="card"><div class="label" data-i18n="daoBudget">Fondo DAO (Budget)</div><div class="value" id="global-dao-budget">--</div></div>
       <div class="card"><div class="label" data-i18n="blockReward">Recompensa / Bloque</div><div class="value" id="global-block-reward">--</div></div>
       <div class="card"><div class="label" data-i18n="rewardPool">Fondo de Recompensas Total</div><div class="value" id="global-reward-pool">--</div></div>
-      <div class="card"><div class="label" data-i18n="hbdPrintRate">HBD Print Rate</div><div class="value" id="global-hbd-print-rate">--</div></div>
-      <div class="card"><div class="label" data-i18n="virtualSupply">Suministro Virtual</div><div class="value" id="global-virtual-supply">--</div></div>
     </div>
 
     <!-- Sección Usuario -->
