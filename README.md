@@ -7,38 +7,48 @@
 ![Issues](https://img.shields.io/github/issues/rzazo24/hive-scope)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 ![Hive](https://img.shields.io/badge/blockchain-Hive-red)
-![Status](https://img.shields.io/badge/status-en%20desarrollo-yellow)
+![Status](https://img.shields.io/badge/status-in%20development-yellow)
 
 Hive stats in real-time.
 
 🔗 Live: [hivescope.xyz](https://hivescope.xyz)
 
-## Descripción
+![hive-scope screenshot](./assets/screenshot-home.png)
 
-`hive-scope` es una aplicación web que muestra estadísticas de la blockchain de Hive en tiempo real.
+## Description
 
-## Estructura del proyecto
+`hive-scope` is a web app that shows Hive blockchain stats in real-time — global network metrics and per-account analysis — with no backend of its own: everything is fetched client-side directly from public Hive RPC nodes.
+
+## Features
+
+- **Global network stats**: last block, current witness, HIVE price, supply, staking ratio, reward pool, HBD print rate, DAO fund, and more.
+- **Account analysis**: HP breakdown (own/received/delegated), voting mana, vote value (current mana and 100% estimate), reputation, pending rewards, Resource Credits, followers, and portfolio value.
+- **Filterable activity history**: recent account activity, filterable by transfers, posts, votes, rewards, or other.
+- **Automatic node failover**: requests retry across a list of public Hive nodes if one fails.
+- **Bilingual UI**: English and Spanish, switchable at runtime.
+
+## Project structure
 
 ```
 hive-scope/
-├── index.html   # Punto de entrada de la aplicación
-└── app.js       # Lógica principal de la aplicación
+├── index.html   # Application entry point
+└── app.js       # Main application logic
 ```
 
-## Uso
+## Usage
 
-Al ser un proyecto estático (HTML + JS), puedes ejecutarlo localmente sirviendo los archivos con cualquier servidor estático, por ejemplo:
+Since this is a static project (HTML + JS), you can run it locally by serving the files with any static server, for example:
 
 ```bash
 npx serve .
 ```
 
-o simplemente abriendo `index.html` en el navegador.
+or simply by opening `index.html` in your browser.
 
-## Estado
+## Status
 
-Proyecto en desarrollo temprano.
+Actively maintained, early-stage project.
 
-## Licencia
+## License
 
-MIT. Ver [LICENSE](./LICENSE) para más detalles.
+MIT. See [LICENSE](./LICENSE) for details.
