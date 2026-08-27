@@ -1,4 +1,4 @@
-// Nodos RPC de la red Hive
+// Hive network RPC nodes
 const HIVE_NODES = [
   'https://api.hive.blog',
   'https://api.hivekings.com',
@@ -17,18 +17,18 @@ let currentHbdInterestRate = 0;
 let currentLang = 'en';
 let currentHistoryFilter = 'all';
 
-// Instancias de gráficos para destruirlos antes de re-renderizar
+// Chart instances, destroyed before re-rendering
 let hpChartInstance = null;
 let balanceChartInstance = null;
 
-// Función de traducción auxiliar
+// Helper translation function
 function getTranslation(key) {
   return (translations[currentLang] && translations[currentLang][key]) 
     ? translations[currentLang][key] 
     : key;
 }
 
-// Escapa texto para insertarlo de forma segura en innerHTML (evita XSS)
+// Escapes text for safe insertion into innerHTML (prevents XSS)
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -39,7 +39,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// Función para consultar la blockchain con reconexión automática de nodos
+// Queries the blockchain with automatic node failover
 async function fetchHiveNodes(method, params = []) {
   for (let attempt = 0; attempt < HIVE_NODES.length; attempt++) {
     const node = HIVE_NODES[currentNodeIndex];
@@ -68,7 +68,7 @@ async function fetchHiveNodes(method, params = []) {
   throw new Error('Todos los nodos RPC fallaron al responder.');
 }
 
-// Diccionario de traducciones
+// Translation dictionary
 const translations = {
   es: {
     subtitle: "Hive, en tiempo real",
@@ -262,15 +262,15 @@ const translations = {
   }
 };
 
-// Formatea números forzando coma para miles y punto para decimales,
-// sin importar el idioma/región configurado en el navegador del usuario
+// Formats numbers forcing comma for thousands and dot for decimals,
+// regardless of the language/region configured in the user's browser
 function formatNumber(num, options = {}) {
   const n = parseFloat(num);
   if (isNaN(n)) return '0';
   return n.toLocaleString('en-US', options);
 }
 
-// Conversión segura de VESTS a HP
+// Safe VESTS to HP conversion
 function vestsToHP(vests) {
   const v = parseFloat(vests || 0);
   if (!globalVestingShares || !globalVestingFundHive || isNaN(v) || v === 0) {
@@ -279,7 +279,7 @@ function vestsToHP(vests) {
   return (v * globalVestingFundHive) / globalVestingShares;
 }
 
-// Cálculo de reputación universal
+// Universal reputation calculation
 function calculateReputation(rep) {
   if (rep === undefined || rep === null) return 25;
   const numRep = Number(rep);
@@ -305,7 +305,7 @@ function calculateReputation(rep) {
   return Math.floor(out);
 }
 
-// Calcular el porcentaje de Resource Credits (RC) regenerados hasta ahora
+// Calculate the percentage of Resource Credits (RC) regenerated so far
 function calculateRCPercent(rcAccount) {
   if (!rcAccount || !rcAccount.rc_manabar || !rcAccount.max_rc) return null;
 
@@ -317,14 +317,14 @@ function calculateRCPercent(rcAccount) {
   const now = Math.floor(Date.now() / 1000);
   const elapsed = Math.max(0, now - lastUpdateTime);
 
-  let regenerated = currentMana + (elapsed * maxRC) / 432000; // Regeneración total en ~5 días
+  let regenerated = currentMana + (elapsed * maxRC) / 432000; // Full regeneration in ~5 days
   if (regenerated > maxRC) regenerated = maxRC;
 
   return ((regenerated / maxRC) * 100).toFixed(2);
 }
 
-// Calcular valor estimado de un voto, en HIVE y su equivalente en USD.
-// votingPowerBasis va de 0 a 10000 (10000 = 100% de mana). Por defecto, 100%.
+// Calculate the estimated value of a vote, in HIVE and its USD equivalent.
+// votingPowerBasis ranges from 0 to 10000 (10000 = 100% mana). Defaults to 100%.
 function calculateVoteValue(userEffVests, votingPowerBasis = 10000) {
   if (!globalRewardPool || userEffVests <= 0) return { hive: 0, usd: 0 };
 
@@ -334,8 +334,8 @@ function calculateVoteValue(userEffVests, votingPowerBasis = 10000) {
 
   if (!rewardBalance || !recentClaims) return { hive: 0, usd: 0 };
 
-  // Los VESTS de la API tienen 6 decimales; para casar con la escala interna
-  // de "recent_claims" hay que convertirlos a su unidad entera (x 1,000,000).
+  // The API's VESTS have 6 decimals; to match the internal scale of
+  // "recent_claims" they need to be converted to their integer unit (x 1,000,000).
   const vestsInBase = userEffVests * 1e6;
   const power = (votingPowerBasis * 10000 / 10000) / 50 + 1;
   const rshares = (power * vestsInBase) / 10000;
@@ -344,7 +344,7 @@ function calculateVoteValue(userEffVests, votingPowerBasis = 10000) {
   return { hive: voteValueHive, usd: voteValueHive * currentHivePrice };
 }
 
-// Agrupa una operación en una categoría de filtro
+// Groups an operation into a filter category
 function getOperationCategory(op) {
   const [type, data] = op;
   switch (type) {
@@ -353,21 +353,21 @@ function getOperationCategory(op) {
     case 'vote':
       return 'votes';
     case 'comment':
-      // Solo los posts nuevos cuentan como "posts"; las respuestas van a "other",
-      // igual que parseOperation() las distingue visualmente (📝 vs 💬).
+      // Only new posts count as "posts"; replies go to "other", the same way
+      // parseOperation() visually distinguishes them (📝 vs 💬).
       return data.parent_author ? 'other' : 'posts';
     case 'claim_reward_balance':
     case 'curation_reward':
     case 'author_reward':
       return 'rewards';
     default:
-      // effective_comment_vote es una virtual op que duplica el 'vote' ya emitido
-      // por el usuario, así que no se agrupa con "votes" para evitar verlo dos veces.
+      // effective_comment_vote is a virtual op that duplicates the 'vote' already
+      // emitted by the user, so it isn't grouped with "votes" to avoid showing it twice.
       return 'other';
   }
 }
 
-// Formatear operaciones de la blockchain con traducción dinámica
+// Format blockchain operations with dynamic translation
 function parseOperation(op) {
   const [type, data] = op;
   const t = (key) => getTranslation(key);
@@ -430,7 +430,7 @@ function parseOperation(op) {
   }
 }
 
-// Cargar métricas globales de la red Hive
+// Load global Hive network metrics
 async function loadGlobalStats() {
   try {
     const props = await fetchHiveNodes('condenser_api.get_dynamic_global_properties');
@@ -477,19 +477,19 @@ async function loadGlobalStats() {
     document.getElementById('global-dao-budget').innerText = daoBalanceStr;
     document.getElementById('global-block-reward').innerText = '1.25 HIVE';
 
-    // Fondo de recompensas total (HIVE + equivalente USD)
+    // Total reward pool (HIVE + USD equivalent)
     if (globalRewardPool && globalRewardPool.reward_balance) {
       const rewardPoolHive = parseFloat(globalRewardPool.reward_balance.split(' ')[0]) || 0;
       const rewardPoolUSD = rewardPoolHive * currentHivePrice;
       document.getElementById('global-reward-pool').innerText = `${formatNumber(Math.round(rewardPoolHive))} HIVE ($${formatNumber(rewardPoolUSD, {maximumFractionDigits: 0})})`;
     }
 
-    // HBD Print Rate (props.hbd_print_rate va de 0 a 10000, siendo 10000 = 100%)
+    // HBD Print Rate (props.hbd_print_rate ranges from 0 to 10000, where 10000 = 100%)
     const rawPrintRate = props.hbd_print_rate !== undefined ? props.hbd_print_rate : 10000;
     const printRatePercent = (parseFloat(rawPrintRate) / 100).toFixed(1);
     document.getElementById('global-hbd-print-rate').innerText = isNaN(printRatePercent) ? '--' : `${printRatePercent}%`;
 
-    // Suministro Virtual (HIVE líquido + HIVE equivalente en staking)
+    // Virtual Supply (liquid HIVE + HIVE equivalent in staking)
     if (props.virtual_supply) {
       const virtualSupplyNum = parseFloat(props.virtual_supply.split(' ')[0]) || 0;
       document.getElementById('global-virtual-supply').innerText = `${formatNumber(Math.round(virtualSupplyNum))} HIVE`;
@@ -500,7 +500,7 @@ async function loadGlobalStats() {
   }
 }
 
-// Cargar y consultar datos de la cuenta de usuario
+// Load and query user account data
 async function loadUserData() {
   const usernameInput = document.getElementById('username').value.trim().toLowerCase();
   const container = document.getElementById('user-section');
@@ -557,11 +557,11 @@ async function loadUserData() {
   }
 }
 
-// Busca el comentario más reciente dentro del historial de actividad ya cargado
+// Finds the most recent comment within the already-loaded activity history
 function findLastComment(historyData) {
   if (!historyData || historyData.length === 0) return null;
 
-  // El historial viene ordenado de más antiguo a más reciente, recorremos desde el final
+  // History is ordered oldest to newest, so we iterate from the end
   for (let i = historyData.length - 1; i >= 0; i--) {
     const opData = historyData[i][1];
     const op = opData.op;
@@ -577,12 +577,12 @@ function findLastComment(historyData) {
   return null;
 }
 
-// Renderizar la interfaz
+// Render the interface
 function renderUserUI(user, profileData, historyData = [], rcAccount = null, followCounts = null) {
   const container = document.getElementById('user-section');
   const t = translations[currentLang];
 
-  // VESTS y HP
+  // VESTS and HP
   const ownVests = parseFloat(user.vesting_shares || 0);
   const recVests = parseFloat(user.received_vesting_shares || 0);
   const delVests = parseFloat(user.delegated_vesting_shares || 0);
@@ -610,12 +610,12 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
     }
   }
 
-  // Valor del voto: con la mana actual real (comparable con PeakD) y estimado al 100%
+  // Vote value: with real current mana (comparable to PeakD) and estimated at 100%
   const manaPercentNum = parseFloat(manaPercent);
   const voteValueCurrent = calculateVoteValue(effVests, manaPercentNum * 100);
   const voteValueFull = calculateVoteValue(effVests, 10000);
 
-  // Metadatos y perfil
+  // Metadata and profile
   let metadata = {};
   if (profileData && profileData.metadata && profileData.metadata.profile) {
     metadata = profileData.metadata.profile;
@@ -636,24 +636,24 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
   const website = metadata.website ? `🔗 <a href="${escapeHtml(metadata.website)}" target="_blank" style="color:var(--accent); text-decoration:none;">${escapeHtml(metadata.website)}</a>` : '';
   const createdDate = new Date(user.created + 'Z').toLocaleDateString();
 
-  // Antigüedad de la cuenta en días
+  // Account age in days
   const createdTimestamp = new Date(user.created + 'Z').getTime();
   const accountAgeDays = Math.floor((Date.now() - createdTimestamp) / (1000 * 60 * 60 * 24));
 
-  // Witnesses apoyados (votados)
+  // Witnesses supported (voted for)
   const witnessesVotedCount = user.witnesses_voted_for !== undefined ? parseInt(user.witnesses_voted_for) : 0;
 
-  // Recompensas pendientes (HIVE + HBD + HP sin reclamar)
+  // Pending rewards (unclaimed HIVE + HBD + HP)
   const pendingHive = parseFloat((user.reward_hive_balance || "0 HIVE").split(' ')[0]);
   const pendingHbd = parseFloat((user.reward_hbd_balance || "0 HBD").split(' ')[0]);
   const pendingVests = parseFloat((user.reward_vesting_balance || "0 VESTS").split(' ')[0]);
   const pendingHP = vestsToHP(pendingVests);
   const hasPendingRewards = (pendingHive > 0 || pendingHbd > 0 || pendingHP > 0);
 
-  // Último comentario (buscado en el historial de actividad reciente)
+  // Last comment (found in the recent activity history)
   const lastComment = findLastComment(historyData);
 
-  // Power Down: retiro semanal de HP programado
+  // Power Down: scheduled weekly HP withdrawal
   const withdrawRateVests = parseFloat((user.vesting_withdraw_rate || "0 VESTS").split(' ')[0]);
   const isPoweringDown = withdrawRateVests > 0;
   const powerDownWeeklyHP = isPoweringDown ? vestsToHP(withdrawRateVests) : 0;
@@ -663,11 +663,11 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
     nextWithdrawalText = new Date(nextWithdrawalRaw + 'Z').toLocaleDateString();
   }
 
-  // Seguidores / Siguiendo
+  // Followers / Following
   const followerCount = followCounts && followCounts.follower_count !== undefined ? followCounts.follower_count : null;
   const followingCount = followCounts && followCounts.following_count !== undefined ? followCounts.following_count : null;
 
-  // Valor total del portfolio en USD (HIVE + HP + HBD)
+  // Total portfolio value in USD (HIVE + HP + HBD)
   const hiveBalanceNum = parseFloat(user.balance || 0);
   const hbdBalanceNum = parseFloat(user.hbd_balance || 0);
   const savingsHiveNum = parseFloat(user.savings_balance || 0);
@@ -676,20 +676,20 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
     + (ownHP * currentHivePrice)
     + (hbdBalanceNum + savingsHbdNum);
 
-  // Último voto emitido
+  // Last vote cast
   const rawLastVote = user.last_vote_time;
   let lastVoteText = t.neverVoted;
   if (rawLastVote && !rawLastVote.startsWith('1970-01-01')) {
     lastVoteText = new Date(rawLastVote + 'Z').toLocaleDateString();
   }
 
-  // Interés anual estimado sobre HBD en ahorros
+  // Estimated annual interest on HBD savings
   const hbdInterestAnnualEstimate = savingsHbdNum * (currentHbdInterestRate / 100);
 
-  // Publicaciones totales
+  // Total posts
   const postCount = user.post_count !== undefined ? parseInt(user.post_count) : 0;
 
-  // Fecha de última publicación
+  // Date of last post
   const rawLastPost = user.last_root_post || user.last_post;
   let lastPostText = t.never;
   if (rawLastPost && !rawLastPost.startsWith('1970-01-01')) {
@@ -844,12 +844,12 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
     </div>
   `;
 
-  // Inicializar Gráficos después de inyectar el HTML
+  // Initialize charts after injecting the HTML
   renderCharts(ownHP, recHP, delHP, parseFloat(user.balance), parseFloat(user.hbd_balance), effHP);
   setupHistoryFilters(historyData);
 }
 
-// Construye el HTML de la lista de actividad, opcionalmente filtrada por categoría
+// Builds the activity list HTML, optionally filtered by category
 function buildHistoryHTML(historyData, filterKey = 'all') {
   if (!historyData || historyData.length === 0) {
     return `<p style="color: var(--text-dim);">${getTranslation('noHistory')}</p>`;
@@ -864,13 +864,13 @@ function buildHistoryHTML(historyData, filterKey = 'all') {
   }
 
   return filtered.slice().reverse().map(item => {
-    const index = item[0];       // Número de secuencia en la cuenta
-    const opData = item[1];      // Contenido del evento
+    const index = item[0];       // Sequence number on the account
+    const opData = item[1];      // Event content
     const op = opData.op;
-    const trxId = opData.trx_id; // ID único de la transacción
+    const trxId = opData.trx_id; // Unique transaction ID
     const timestamp = new Date(opData.timestamp + 'Z').toLocaleString();
 
-    // Muestra hash enlazado a hive block explorer o el número de secuencia (#)
+    // Shows a hash linked to hive block explorer, or the sequence number (#)
     const shortTrx = (trxId && trxId !== '0000000000000000000000000000000000000000')
       ? `<a href="https://hiveblockexplorer.com/tx/${trxId}" target="_blank" rel="noopener" class="trx-link">#${trxId.substring(0, 8)}</a>`
       : `<span class="trx-num">#${index}</span>`;
@@ -887,7 +887,7 @@ function buildHistoryHTML(historyData, filterKey = 'all') {
   }).join('');
 }
 
-// Construye la barra de filtros y el contenedor de la lista de actividad
+// Builds the filter bar and the activity list container
 function renderHistorySection(historyData) {
   const filters = [
     { key: 'all', i18n: 'filterAll' },
@@ -908,7 +908,7 @@ function renderHistorySection(historyData) {
   `;
 }
 
-// Conecta los botones de filtro con el contenedor de la lista, sin recargar datos
+// Connects the filter buttons to the list container, without reloading data
 function setupHistoryFilters(historyData) {
   const buttons = document.querySelectorAll('.history-filter-btn');
   const listContainer = document.getElementById('history-list');
@@ -924,12 +924,12 @@ function setupHistoryFilters(historyData) {
   });
 }
 
-// Generación de Gráficos con Chart.js
+// Chart generation with Chart.js
 function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
   if (hpChartInstance) hpChartInstance.destroy();
   if (balanceChartInstance) balanceChartInstance.destroy();
 
-  // Obtener traducciones para las etiquetas de los gráficos
+  // Get translations for the chart labels
   const labelOwn = getTranslation('chartHpOwn');
   const labelRec = getTranslation('chartHpReceived');
   const labelDel = getTranslation('chartHpDelegated');
@@ -983,13 +983,13 @@ function renderCharts(ownHP, recHP, delHP, hiveBalance, hbdBalance, effHP) {
   });
 }
 
-// Aplica el diccionario de traducciones actual a toda la interfaz
-// (elementos con data-i18n, placeholders, y el botón de idioma)
+// Applies the current translation dictionary to the whole interface
+// (data-i18n elements, placeholders, and the language button)
 function applyTranslations() {
   const t = translations[currentLang];
   if (!t) return;
 
-  // Bandera y etiqueta del botón de idioma
+  // Language button flag and label
   const langLabel = document.getElementById('lang-label');
   if (langLabel) {
     langLabel.textContent = currentLang.toUpperCase();
@@ -999,7 +999,7 @@ function applyTranslations() {
     langFlag.textContent = currentLang === 'es' ? '🇪🇸' : '🇬🇧';
   }
 
-  // Elementos estáticos del HTML con data-i18n
+  // Static HTML elements with data-i18n
   document.querySelectorAll('[data-i18n]').forEach(elem => {
     const key = elem.getAttribute('data-i18n');
     if (t[key] !== undefined) {
@@ -1007,7 +1007,7 @@ function applyTranslations() {
     }
   });
 
-  // Placeholders de inputs
+  // Input placeholders
   document.querySelectorAll('[data-i18n-placeholder]').forEach(elem => {
     const key = elem.getAttribute('data-i18n-placeholder');
     if (t[key] !== undefined) {
@@ -1015,16 +1015,16 @@ function applyTranslations() {
     }
   });
 
-  // Atributo lang del documento, por accesibilidad y SEO
+  // Document lang attribute, for accessibility and SEO
   document.documentElement.lang = currentLang;
 }
 
-// Conmutación de idioma optimizada
+// Optimized language toggle
 function toggleLanguage() {
   currentLang = currentLang === 'es' ? 'en' : 'es';
   applyTranslations();
 
-  // Recargar y volver a renderizar los datos del usuario (incluyendo las actividades traducidas)
+  // Reload and re-render the user data (including translated activities)
   const usernameInput = document.getElementById('username');
   if (usernameInput && usernameInput.value.trim() !== '') {
     loadUserData();
@@ -1032,7 +1032,7 @@ function toggleLanguage() {
 }
 
 // ==========================================
-// SUGERENCIAS DE USUARIO (AUTOCOMPLETE)
+// USER SUGGESTIONS (AUTOCOMPLETE)
 // ==========================================
 let debounceTimer = null;
 
@@ -1061,10 +1061,10 @@ async function handleUserAutocomplete(event) {
   }, 300);
 }
 
-// Inicialización
+// Initialization
 document.addEventListener('DOMContentLoaded', async () => {
-  // Aplica el idioma por defecto (inglés) antes de cargar cualquier dato,
-  // así el texto estático del HTML queda sincronizado con currentLang
+  // Applies the default language (English) before loading any data,
+  // so the static HTML text stays in sync with currentLang
   applyTranslations();
 
   const usernameInput = document.getElementById('username');
