@@ -163,7 +163,20 @@ const translations = {
     sectionVotingPower: "Poder de Voto y Staking",
     sectionBalances: "Balances y Patrimonio",
     sectionActivity: "Actividad",
-    sectionGovernanceRes: "Gobernanza y Recursos"
+    sectionGovernanceRes: "Gobernanza y Recursos",
+    rewardsBreakdown: "Desglose de Recompensas",
+    curationApr: "APR de Curación",
+    colAuthor: "Autor",
+    colCuration: "Curación",
+    colWitness: "Witness",
+    colTotal: "Total",
+    rowAllTime: "Histórico",
+    row30Days: "30 Días",
+    row7Days: "7 Días",
+    rowToday: "Hoy",
+    rowYesterday: "Ayer",
+    rewardsLoading: "Calculando recompensas...",
+    rewardsApproxNote: "aproximado, cuenta muy activa"
   },
   en: {
     subtitle: "Hive, in real-time",
@@ -258,7 +271,20 @@ const translations = {
     sectionVotingPower: "Voting Power & Staking",
     sectionBalances: "Balances & Net Worth",
     sectionActivity: "Activity",
-    sectionGovernanceRes: "Governance & Resources"
+    sectionGovernanceRes: "Governance & Resources",
+    rewardsBreakdown: "Rewards Breakdown",
+    curationApr: "Curation APR",
+    colAuthor: "Author",
+    colCuration: "Curation",
+    colWitness: "Witness",
+    colTotal: "Total",
+    rowAllTime: "All Time",
+    row30Days: "30 Days",
+    row7Days: "7 Days",
+    rowToday: "Today",
+    rowYesterday: "Yesterday",
+    rewardsLoading: "Calculating rewards...",
+    rewardsApproxNote: "approximate, very active account"
   }
 };
 
@@ -839,6 +865,11 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
     </div>
 
     <div class="card" style="margin-top: 20px;">
+      <h3 style="margin-bottom: 12px; font-size: 1.1em; color: var(--accent);" data-i18n="rewardsBreakdown">${t.rewardsBreakdown}</h3>
+      <div id="rewards-breakdown" class="loader" style="padding: 20px;" data-i18n="rewardsLoading">${t.rewardsLoading}</div>
+    </div>
+
+    <div class="card" style="margin-top: 20px;">
       <h3 style="margin-bottom: 12px; font-size: 1.1em; color: var(--accent);" data-i18n="recentHistory">${t.recentHistory}</h3>
       ${renderHistorySection(historyData)}
     </div>
@@ -847,6 +878,7 @@ function renderUserUI(user, profileData, historyData = [], rcAccount = null, fol
   // Initialize charts after injecting the HTML
   renderCharts(ownHP, recHP, delHP, parseFloat(user.balance), parseFloat(user.hbd_balance), effHP);
   setupHistoryFilters(historyData);
+  loadRewardsBreakdown(user, effHP);
 }
 
 // Builds the activity list HTML, optionally filtered by category
@@ -922,6 +954,154 @@ function setupHistoryFilters(historyData) {
       listContainer.innerHTML = buildHistoryHTML(historyData, currentHistoryFilter);
     });
   });
+}
+
+// Reward operation types considered in the rewards breakdown table
+const REWARD_OP_TYPES = new Set(['author_reward', 'curation_reward', 'producer_reward']);
+
+// Paginates the account history backward (newest to oldest) collecting only
+// reward ops, stopping once it reaches `cutoffDate` or `maxPages` pages.
+// The page cap protects very active/old accounts from triggering hundreds of RPC calls;
+// `capped` tells the caller whether `cutoffDate` was actually reached.
+async function fetchRewardHistorySince(username, cutoffDate, maxPages = 60) {
+  const rewardOps = [];
+  let start = -1;
+  let capped = true;
+
+  for (let page = 0; page < maxPages; page++) {
+    const limit = start === -1 ? 1000 : Math.min(1000, start + 1);
+    if (limit <= 0) { capped = false; break; }
+
+    const batch = await fetchHiveNodes('condenser_api.get_account_history', [username, start, limit]);
+    if (!batch || batch.length === 0) { capped = false; break; }
+
+    for (const item of batch) {
+      if (REWARD_OP_TYPES.has(item[1].op[0])) rewardOps.push(item);
+    }
+
+    const oldest = batch[0];
+    const oldestIndex = oldest[0];
+    const oldestTimestamp = new Date(oldest[1].timestamp + 'Z');
+
+    if (oldestTimestamp <= cutoffDate || oldestIndex <= 0) { capped = false; break; }
+    start = oldestIndex - 1;
+  }
+
+  return { rewardOps, capped };
+}
+
+// Sums reward amounts (VESTS + liquid HIVE/HBD) into All Time/30d/7d/Today/Yesterday buckets
+function aggregateRewardsByPeriod(rewardOps) {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfYesterday = new Date(startOfToday.getTime() - 86400000);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
+  const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000);
+
+  const emptyBucket = () => ({ authorVests: 0, authorHive: 0, authorHbd: 0, curationVests: 0, witnessVests: 0 });
+  const buckets = { allTime: emptyBucket(), today: emptyBucket(), yesterday: emptyBucket(), sevenDays: emptyBucket(), thirtyDays: emptyBucket() };
+
+  for (const item of rewardOps) {
+    const [type, data] = item[1].op;
+    const ts = new Date(item[1].timestamp + 'Z');
+
+    const addTo = (bucket) => {
+      if (type === 'author_reward') {
+        bucket.authorVests += parseFloat(data.vesting_payout) || 0;
+        bucket.authorHive += parseFloat(data.hive_payout) || 0;
+        bucket.authorHbd += parseFloat(data.hbd_payout) || 0;
+      } else if (type === 'curation_reward') {
+        bucket.curationVests += parseFloat(data.reward) || 0;
+      } else if (type === 'producer_reward') {
+        bucket.witnessVests += parseFloat(data.vesting_shares) || 0;
+      }
+    };
+
+    addTo(buckets.allTime);
+    if (ts >= startOfToday) addTo(buckets.today);
+    if (ts >= startOfYesterday && ts < startOfToday) addTo(buckets.yesterday);
+    if (ts >= sevenDaysAgo) addTo(buckets.sevenDays);
+    if (ts >= thirtyDaysAgo) addTo(buckets.thirtyDays);
+  }
+
+  return buckets;
+}
+
+// Builds one row of the rewards table (row label + Author/Curation/Witness/Total cells)
+function buildRewardsRow(labelKey, authorHP, curationHP, witnessHP, liquidHive, liquidHbd, isTotalRow = false, note = '') {
+  const t = translations[currentLang];
+  const totalHP = authorHP + curationHP + witnessHP;
+  const usdValue = (totalHP + liquidHive) * currentHivePrice + liquidHbd;
+
+  const authorSub = (liquidHive > 0 || liquidHbd > 0)
+    ? `<span class="sub">${liquidHive > 0 ? formatNumber(liquidHive, {maximumFractionDigits: 2}) + ' HIVE' : ''}${liquidHive > 0 && liquidHbd > 0 ? ' • ' : ''}${liquidHbd > 0 ? formatNumber(liquidHbd, {maximumFractionDigits: 2}) + ' HBD' : ''}</span>`
+    : '';
+
+  return `
+    <tr${isTotalRow ? ' class="total-row"' : ''}>
+      <td data-i18n="${labelKey}">${t[labelKey]}${note}</td>
+      <td>${formatNumber(authorHP, {maximumFractionDigits: 2})} HP${authorSub}</td>
+      <td>${formatNumber(curationHP, {maximumFractionDigits: 2})} HP</td>
+      <td>${formatNumber(witnessHP, {maximumFractionDigits: 2})} HP</td>
+      <td>${formatNumber(totalHP, {maximumFractionDigits: 2})} HP<span class="sub">$${formatNumber(usdValue, {maximumFractionDigits: 2})}</span></td>
+    </tr>
+  `;
+}
+
+// Renders the full rewards breakdown: Curation APR badge + All Time/30d/7d/Today/Yesterday table
+function renderRewardsTable(buckets, effHP, isCapped) {
+  const t = translations[currentLang];
+
+  const curationHP7d = vestsToHP(buckets.sevenDays.curationVests);
+  const curationApr = effHP > 0 ? (curationHP7d / effHP) * (365 / 7) * 100 : 0;
+  const approxNote = isCapped ? ` <span class="sub" style="display:inline;">(${t.rewardsApproxNote})</span>` : '';
+
+  const rows = [
+    buildRewardsRow('rowAllTime', vestsToHP(buckets.allTime.authorVests), vestsToHP(buckets.allTime.curationVests), vestsToHP(buckets.allTime.witnessVests), buckets.allTime.authorHive, buckets.allTime.authorHbd, true, approxNote),
+    buildRewardsRow('row30Days', vestsToHP(buckets.thirtyDays.authorVests), vestsToHP(buckets.thirtyDays.curationVests), vestsToHP(buckets.thirtyDays.witnessVests), buckets.thirtyDays.authorHive, buckets.thirtyDays.authorHbd),
+    buildRewardsRow('row7Days', vestsToHP(buckets.sevenDays.authorVests), curationHP7d, vestsToHP(buckets.sevenDays.witnessVests), buckets.sevenDays.authorHive, buckets.sevenDays.authorHbd),
+    buildRewardsRow('rowToday', vestsToHP(buckets.today.authorVests), vestsToHP(buckets.today.curationVests), vestsToHP(buckets.today.witnessVests), buckets.today.authorHive, buckets.today.authorHbd),
+    buildRewardsRow('rowYesterday', vestsToHP(buckets.yesterday.authorVests), vestsToHP(buckets.yesterday.curationVests), vestsToHP(buckets.yesterday.witnessVests), buckets.yesterday.authorHive, buckets.yesterday.authorHbd)
+  ].join('');
+
+  return `
+    <div class="rewards-apr-badge">${t.curationApr}: <strong>${curationApr.toFixed(2)}%</strong></div>
+    <div class="rewards-table-wrap">
+      <table class="rewards-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th data-i18n="colAuthor">${t.colAuthor}</th>
+            <th data-i18n="colCuration">${t.colCuration}</th>
+            <th data-i18n="colWitness">${t.colWitness}</th>
+            <th data-i18n="colTotal">${t.colTotal}</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// Fetches the reward history and injects the rewards breakdown table once ready.
+// Runs after the initial render so the account history pagination doesn't block the UI.
+async function loadRewardsBreakdown(user, effHP) {
+  const target = document.getElementById('rewards-breakdown');
+  if (!target) return;
+
+  try {
+    // The account's own posting_rewards/curation_rewards counters are stale on modern
+    // Hive (they stop tracking real totals), so "All Time" is derived from the real
+    // history instead, paginated back to the account's creation date.
+    const createdDate = new Date((user.created || '1970-01-01T00:00:00') + 'Z');
+    const { rewardOps, capped } = await fetchRewardHistorySince(user.name, createdDate);
+    const buckets = aggregateRewardsByPeriod(rewardOps);
+
+    target.outerHTML = `<div id="rewards-breakdown">${renderRewardsTable(buckets, effHP, capped)}</div>`;
+  } catch (e) {
+    console.warn("No se pudo calcular el desglose de recompensas:", e);
+    target.outerHTML = `<div id="rewards-breakdown"><p style="color: var(--text-dim);">${getTranslation('noHistory')}</p></div>`;
+  }
 }
 
 // Chart generation with Chart.js
