@@ -959,10 +959,16 @@ function setupHistoryFilters(historyData) {
 // Reward operation types considered in the rewards breakdown table
 const REWARD_OP_TYPES = new Set(['author_reward', 'curation_reward', 'producer_reward']);
 
+// Bit positions (confirmed against Hive's public RPC) for get_account_history's
+// server-side operation_filter_low/high bitmask, so nodes only return reward ops
+// instead of the full history (votes, comments, transfers, ...).
+const REWARD_FILTER_LOW = ((1n << 51n) | (1n << 52n)).toString();  // author_reward, curation_reward
+const REWARD_FILTER_HIGH = (1n << 0n).toString();                  // producer_reward (bit 64 overall)
+
 // Paginates the account history backward (newest to oldest) collecting only
-// reward ops, stopping once it reaches `cutoffDate` or `maxPages` pages.
-// The page cap protects very active/old accounts from triggering hundreds of RPC calls;
-// `capped` tells the caller whether `cutoffDate` was actually reached.
+// reward ops (filtered server-side), stopping once it reaches `cutoffDate` or
+// `maxPages` pages. The page cap protects very active/old accounts from triggering
+// hundreds of RPC calls; `capped` tells the caller whether `cutoffDate` was actually reached.
 async function fetchRewardHistorySince(username, cutoffDate, maxPages = 60) {
   const rewardOps = [];
   let start = -1;
@@ -972,9 +978,11 @@ async function fetchRewardHistorySince(username, cutoffDate, maxPages = 60) {
     const limit = start === -1 ? 1000 : Math.min(1000, start + 1);
     if (limit <= 0) { capped = false; break; }
 
-    const batch = await fetchHiveNodes('condenser_api.get_account_history', [username, start, limit]);
+    const batch = await fetchHiveNodes('condenser_api.get_account_history', [username, start, limit, REWARD_FILTER_LOW, REWARD_FILTER_HIGH]);
     if (!batch || batch.length === 0) { capped = false; break; }
 
+    // Client-side filter kept as a safety net: some public nodes may ignore the
+    // operation_filter params and return unfiltered history instead.
     for (const item of batch) {
       if (REWARD_OP_TYPES.has(item[1].op[0])) rewardOps.push(item);
     }
