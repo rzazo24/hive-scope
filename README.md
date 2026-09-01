@@ -23,6 +23,7 @@ Hive stats in real-time.
 
 - **Global network stats**: last block, current witness, HIVE price, supply, staking ratio, reward pool, HBD print rate, DAO fund, and more.
 - **Account analysis**: HP breakdown (own/received/delegated), voting mana, vote value (current mana and 100% estimate), reputation, pending rewards, Resource Credits, followers, and portfolio value.
+- **Rewards breakdown**: Author/Curation/Witness rewards for All Time, 30 Days, 7 Days, Today, and Yesterday, plus a trailing 7-day Curation APR.
 - **Filterable activity history**: recent account activity, filterable by transfers, posts, votes, rewards, or other.
 - **Automatic node failover**: requests retry across a list of public Hive nodes if one fails.
 - **Bilingual UI**: English and Spanish, switchable at runtime.
