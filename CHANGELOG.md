@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.2] - 2026-09-29
+
+### Added
+- CHANGELOG.md documenting the project's version history.
+
+### Changed
+- Custom scrollbar styling (Webkit + Firefox) matching the site's dark theme.
+
 ## [0.5.1] - 2026-09-15
 
 ### Fixed
