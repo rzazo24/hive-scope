@@ -2,6 +2,12 @@
 
 All notable changes to this project are documented in this file.
 
+## [0.5.3] - 2026-10-05
+
+### Changed
+- Rewards breakdown now only looks at the last 30 days (instead of the full account history), so it loads much faster; the "All Time" row was removed.
+- Curation APR is now shown for both the last 7 and the last 30 days.
+
 ## [0.5.2] - 2026-09-29
 
 ### Added

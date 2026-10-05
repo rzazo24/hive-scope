@@ -165,12 +165,12 @@ const translations = {
     sectionActivity: "Actividad",
     sectionGovernanceRes: "Gobernanza y Recursos",
     rewardsBreakdown: "Desglose de Recompensas",
-    curationApr: "APR de Curación",
+    curationApr7d: "APR de Curación (7d)",
+    curationApr30d: "APR de Curación (30d)",
     colAuthor: "Autor",
     colCuration: "Curación",
     colWitness: "Witness",
     colTotal: "Total",
-    rowAllTime: "Histórico",
     row30Days: "30 Días",
     row7Days: "7 Días",
     rowToday: "Hoy",
@@ -273,12 +273,12 @@ const translations = {
     sectionActivity: "Activity",
     sectionGovernanceRes: "Governance & Resources",
     rewardsBreakdown: "Rewards Breakdown",
-    curationApr: "Curation APR",
+    curationApr7d: "Curation APR (7d)",
+    curationApr30d: "Curation APR (30d)",
     colAuthor: "Author",
     colCuration: "Curation",
     colWitness: "Witness",
     colTotal: "Total",
-    rowAllTime: "All Time",
     row30Days: "30 Days",
     row7Days: "7 Days",
     rowToday: "Today",
@@ -1007,7 +1007,7 @@ function aggregateRewardsByPeriod(rewardOps) {
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000);
 
   const emptyBucket = () => ({ authorVests: 0, authorHive: 0, authorHbd: 0, curationVests: 0, witnessVests: 0 });
-  const buckets = { allTime: emptyBucket(), today: emptyBucket(), yesterday: emptyBucket(), sevenDays: emptyBucket(), thirtyDays: emptyBucket() };
+  const buckets = { today: emptyBucket(), yesterday: emptyBucket(), sevenDays: emptyBucket(), thirtyDays: emptyBucket() };
 
   for (const item of rewardOps) {
     const [type, data] = item[1].op;
@@ -1025,7 +1025,6 @@ function aggregateRewardsByPeriod(rewardOps) {
       }
     };
 
-    addTo(buckets.allTime);
     if (ts >= startOfToday) addTo(buckets.today);
     if (ts >= startOfYesterday && ts < startOfToday) addTo(buckets.yesterday);
     if (ts >= sevenDaysAgo) addTo(buckets.sevenDays);
@@ -1056,24 +1055,25 @@ function buildRewardsRow(labelKey, authorHP, curationHP, witnessHP, liquidHive, 
   `;
 }
 
-// Renders the full rewards breakdown: Curation APR badge + All Time/30d/7d/Today/Yesterday table
+// Renders the rewards breakdown: Curation APR (7d and 30d) + 30d/7d/Today/Yesterday table
 function renderRewardsTable(buckets, effHP, isCapped) {
   const t = translations[currentLang];
 
   const curationHP7d = vestsToHP(buckets.sevenDays.curationVests);
-  const curationApr = effHP > 0 ? (curationHP7d / effHP) * (365 / 7) * 100 : 0;
+  const curationHP30d = vestsToHP(buckets.thirtyDays.curationVests);
+  const apr7d = effHP > 0 ? (curationHP7d / effHP) * (365 / 7) * 100 : 0;
+  const apr30d = effHP > 0 ? (curationHP30d / effHP) * (365 / 30) * 100 : 0;
   const approxNote = isCapped ? ` <span class="sub" style="display:inline;">(${t.rewardsApproxNote})</span>` : '';
 
   const rows = [
-    buildRewardsRow('rowAllTime', vestsToHP(buckets.allTime.authorVests), vestsToHP(buckets.allTime.curationVests), vestsToHP(buckets.allTime.witnessVests), buckets.allTime.authorHive, buckets.allTime.authorHbd, true, approxNote),
-    buildRewardsRow('row30Days', vestsToHP(buckets.thirtyDays.authorVests), vestsToHP(buckets.thirtyDays.curationVests), vestsToHP(buckets.thirtyDays.witnessVests), buckets.thirtyDays.authorHive, buckets.thirtyDays.authorHbd),
+    buildRewardsRow('row30Days', vestsToHP(buckets.thirtyDays.authorVests), curationHP30d, vestsToHP(buckets.thirtyDays.witnessVests), buckets.thirtyDays.authorHive, buckets.thirtyDays.authorHbd, true, approxNote),
     buildRewardsRow('row7Days', vestsToHP(buckets.sevenDays.authorVests), curationHP7d, vestsToHP(buckets.sevenDays.witnessVests), buckets.sevenDays.authorHive, buckets.sevenDays.authorHbd),
     buildRewardsRow('rowToday', vestsToHP(buckets.today.authorVests), vestsToHP(buckets.today.curationVests), vestsToHP(buckets.today.witnessVests), buckets.today.authorHive, buckets.today.authorHbd),
     buildRewardsRow('rowYesterday', vestsToHP(buckets.yesterday.authorVests), vestsToHP(buckets.yesterday.curationVests), vestsToHP(buckets.yesterday.witnessVests), buckets.yesterday.authorHive, buckets.yesterday.authorHbd)
   ].join('');
 
   return `
-    <div class="rewards-apr-badge">${t.curationApr}: <strong>${curationApr.toFixed(2)}%</strong></div>
+    <div class="rewards-apr-badge">${t.curationApr7d}: <strong>${apr7d.toFixed(2)}%</strong> &nbsp;•&nbsp; ${t.curationApr30d}: <strong>${apr30d.toFixed(2)}%</strong></div>
     <div class="rewards-table-wrap">
       <table class="rewards-table">
         <thead>
@@ -1098,11 +1098,9 @@ async function loadRewardsBreakdown(user, effHP) {
   if (!target) return;
 
   try {
-    // The account's own posting_rewards/curation_rewards counters are stale on modern
-    // Hive (they stop tracking real totals), so "All Time" is derived from the real
-    // history instead, paginated back to the account's creation date.
-    const createdDate = new Date((user.created || '1970-01-01T00:00:00') + 'Z');
-    const { rewardOps, capped } = await fetchRewardHistorySince(user.name, createdDate);
+    // Only the last 30 days are fetched: paginating the full history was too slow.
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000);
+    const { rewardOps, capped } = await fetchRewardHistorySince(user.name, thirtyDaysAgo, 15);
     const buckets = aggregateRewardsByPeriod(rewardOps);
 
     target.outerHTML = `<div id="rewards-breakdown">${renderRewardsTable(buckets, effHP, capped)}</div>`;
